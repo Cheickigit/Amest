@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
-
+use App\Http\Controllers\Admin\AccountSecurityController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\QuoteController;
 use App\Http\Controllers\Public\TenderController;
@@ -51,3 +51,11 @@ Route::middleware(['auth','verified','role:admin|editor'])
         Route::resource('projects', ProjectController::class)->except(['show']);
         Route::resource('posts',    PostController::class)->except(['show']);
     });
+
+
+Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(function () {
+    Route::get('/account/security', [AccountSecurityController::class, 'index'])->name('account.security');
+    Route::post('/account/password', [AccountSecurityController::class, 'updatePassword'])->name('account.password.update');
+    Route::delete('/account/sessions/{id}', [AccountSecurityController::class, 'revokeSession'])->name('account.sessions.revoke');
+    Route::post('/account/sessions/logout-others', [AccountSecurityController::class, 'logoutOthers'])->name('account.sessions.logout_others');
+});
