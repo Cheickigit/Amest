@@ -3,40 +3,41 @@ import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { route as ziggyRoute } from 'ziggy-js'
 
-/* ---- types pour usePage() ---- */
+// ---- types pour usePage() ----
 type PageAuth = { user?: Record<string, unknown> | null }
 type PageProps = { auth?: PageAuth }
 
 const page = usePage<PageProps>()
 const user = computed(() => page.props.auth?.user ?? null)
 
-/* ---- helper route() ---- */
+// Helper route() pour le template (Ziggy)
 const route = (name: string, params?: any, absolute?: boolean) =>
   ziggyRoute(name, params, absolute, (window as any).Ziggy)
 
-/* ---- état UI ---- */
+// ---- état UI ----
 const open = ref(false)
 const scrolled = ref(false)
 const progress = ref(0)
 
-/* smart hide du topbar */
+// SMART-HIDE : on cache UNIQUEMENT le topbar en scroll down
 const SMART_HIDE = true
 const topbarPinned = ref(true)
 const lastY = ref(0)
 const lastDeltaDown = ref(false)
 const headerHover = ref(false)
 
-/* ---- INFOS réelles BK Construction (Tanger) ---- */
+// Infos contact — VOS DONNÉES
 const phoneDisplay = ref('+212 7 70 55 60 21')
 const phoneHref    = ref('tel:+212770556021')
-const whatsappHref = ref('https://wa.me/212770556021') // même numéro
+const whatsappHref = ref('https://wa.me/212770556021')
 const email        = ref('contact@bkconstruction.ma')
 const city         = ref('Tanger, Maroc')
 
-/* ui misc */
+// bouton “retour en haut”
 const showUp = ref(false)
 function scrollToTop(){ window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
+// listeners
 function onScroll(){
   const y = window.scrollY
   scrolled.value = y > 8
@@ -87,17 +88,21 @@ onBeforeUnmount(() => {
 
 <template>
   <div :class="['min-h-screen bg-bk-night text-bk-off relative overflow-x-hidden', open ? 'overflow-hidden' : '']">
+
     <!-- BACKDROP -->
     <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
+      <!-- grid -->
       <div class="absolute inset-0 opacity-[.06] mix-blend-overlay
                   bg-[length:36px_36px,36px_36px]
                   bg-[linear-gradient(to_right,rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.2)_1px,transparent_1px)]"></div>
+      <!-- auroras -->
       <div class="absolute -top-[12%] -left-[15%] w-[50vw] h-[45vh] blur-[70px] mix-blend-screen
                   bg-[radial-gradient(60%_60%_at_30%_30%,#dcc176_0%,transparent_60%)] opacity-[.55]"></div>
       <div class="absolute -bottom-[20%] -right-[10%] w-[55vw] h-[55vh] blur-[70px] mix-blend-screen
                   bg-[radial-gradient(60%_60%_at_70%_70%,#fdfdfe_0%,transparent_60%)] opacity-20"></div>
       <div class="absolute top-[25%] right-[35%] w-[34vw] h-[34vh] blur-[70px] mix-blend-screen
                   bg-[conic-gradient(from_90deg_at_50%_50%,rgba(220,193,118,.55),rgba(253,253,254,.12),rgba(220,193,118,.55))] opacity-20"></div>
+      <!-- spotlight -->
       <div class="absolute inset-0 pointer-events-none
                   [background:radial-gradient(350px_350px_at_calc(var(--mx)*100%)_calc(var(--my)*100%),rgba(255,255,255,.06),transparent_60%)]"></div>
     </div>
@@ -122,11 +127,12 @@ onBeforeUnmount(() => {
           class="absolute top-0 left-0 right-0 hidden lg:flex h-10 items-center justify-between
                  text-[13px] text-white/85 border-b border-white/10
                  transition-all duration-300 ease-out bg-gradient-to-b from-white/5 to-transparent"
-          :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[calc(100%+1px)]'">
+          :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[calc(100%+1px)]'"
+        >
           <div class="flex items-center gap-6">
             <span class="inline-flex items-center gap-2 rounded-md px-2 py-1 font-extrabold text-[12px]
                          text-white bg-white/10 ring-1 ring-white/20 shadow-inner">MA</span>
-            <span class="text-white/85">Entreprise de BTP à Tanger — Qualité • Sécurité • Délais</span>
+            <span class="text-white/85">Entreprise marocaine de BTP — Qualité • Sécurité • Délais</span>
 
             <a :href="phoneHref" class="inline-flex items-center gap-2 hover:text-bk-gold">
               <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>
@@ -156,7 +162,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- petite barre "peek" quand le topbar est caché -->
+        <!-- barre peek sous le topbar quand caché -->
         <div class="absolute top-0 left-0 right-0 hidden lg:block h-1.5
                     bg-gradient-to-r from-bk-gold/40 via-white/20 to-bk-gold/40
                     rounded-b-full transition-all duration-300"
@@ -171,12 +177,13 @@ onBeforeUnmount(() => {
                  src="/assets/logo-bk.jpeg" alt="BK Construction logo">
           </Link>
 
+          <!-- NAV DESKTOP (Méthode → Actualités) -->
           <nav class="hidden md:flex items-center gap-1 rounded-2xl px-1 py-1 bg-white/5 ring-1 ring-white/10">
-            <a href="#services" class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Services</a>
-            <a href="#projects" class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Réalisations</a>
-            <a href="#process"  class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Méthode</a>
-            <a href="#rfp"      class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Appels d’offres</a>
-            <a href="#contact"  class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Contact</a>
+            <a href="#services"  class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Services</a>
+            <a href="#projects"  class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Réalisations</a>
+            <a href="#news"      class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Actualités</a>
+            <a href="#rfp"       class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Appels d’offres</a>
+            <a href="#contact"   class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Contact</a>
           </nav>
 
           <div class="hidden md:flex items-center gap-3">
@@ -196,6 +203,7 @@ onBeforeUnmount(() => {
                          border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Espace</Link>
           </div>
 
+          <!-- burger -->
           <button class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl
                          bg-white/10 text-white/95 border border-white/25
                          hover:border-bk-gold/70 shadow-[0_12px_30px_-18px_rgba(0,0,0,.6)] transition"
@@ -208,7 +216,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- spacer sous header -->
+    <!-- spacer pour compenser le header fixe -->
     <div class="h-[76px] lg:h-[108px]" aria-hidden="true"></div>
 
     <!-- Overlay + Drawer mobile -->
@@ -230,8 +238,9 @@ onBeforeUnmount(() => {
                                      bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Services</a>
           <a href="#projects" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
                                      bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Réalisations</a>
-          <a href="#process"  class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
-                                     bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Méthode</a>
+          <!-- MÉTHODE → ACTUALITÉS -->
+          <a href="#news"     class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
+                                     bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Actualités</a>
           <a href="#rfp"      class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
                                      bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Appels d’offres</a>
           <a href="#contact"  class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
@@ -258,10 +267,10 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- CONTENU -->
+    <!-- CONTENU DES PAGES -->
     <main id="page-content"><slot /></main>
 
-    <!-- FOOTER (cohérent or subtil + verre) -->
+    <!-- FOOTER -->
     <footer class="mt-16 text-sm relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
         <div class="relative rounded-2xl">
@@ -273,6 +282,7 @@ onBeforeUnmount(() => {
             <div class="relative rounded-2xl bg-white/[.06] backdrop-blur border border-white/10
                         shadow-[0_40px_120px_-40px_rgba(0,0,0,.65)]">
 
+              <!-- grain doux -->
               <div class="pointer-events-none absolute inset-0 rounded-2xl opacity-10
                           [background-image:radial-gradient(rgba(255,255,255,.28)_0.6px,transparent_0.6px)]
                           [background-size:6px_6px]"></div>
@@ -320,7 +330,7 @@ onBeforeUnmount(() => {
                   <div class="font-bold text-bk-gold mb-3">Ressources</div>
                   <ul class="grid gap-2 text-bk-off/90">
                     <li><a href="#projects" class="hover:text-bk-gold">Réalisations</a></li>
-                    <li><a href="#rfp" class="hover:text-bk-gold">Appels d’offres</a></li>
+                    <li><a href="#news" class="hover:text-bk-gold">Actualités</a></li>
                     <li><a href="/terms" class="hover:text-bk-gold">Conditions générales</a></li>
                     <li><a href="/privacy" class="hover:text-bk-gold">Politique de confidentialité</a></li>
                   </ul>
@@ -364,7 +374,7 @@ onBeforeUnmount(() => {
       </div>      
     </footer>
 
-    <!-- Actions flottantes -->
+    <!-- Floating actions -->
     <a :href="whatsappHref" target="_blank" rel="noopener"
        class="fixed bottom-5 right-5 inline-flex items-center justify-center w-12 h-12 rounded-full
               bg-white/10 border border-white/10 hover:border-bk-gold/60 backdrop-blur z-40">

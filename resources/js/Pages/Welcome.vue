@@ -321,61 +321,321 @@ function focusDevis() {
       </div>
     </section>
 
-    <!-- ================= PARC / STATS ================= -->
-    <section class="py-10 md:py-14">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="section-title" v-reveal>Parc matériel & indicateurs</h2>
+  <!-- ================= PARC / STATS ================= -->
+<section id="fleet-stats" class="py-8 md:py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="section-title" v-reveal>Parc matériel &amp; indicateurs</h2>
 
-        <div class="mt-8 grid gap-5 lg:grid-cols-2">
-          <div class="grid gap-5 md:grid-cols-2">
-            <div class="equip-card ring-gold" @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal>
-              <div class="icon-iso iso-grader"></div>
-              <div class="equip-title">Niveleuses</div>
-              <div class="equip-count"><span v-countup="12">12</span> unités</div>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      <!-- ====== ÉQUIPEMENTS (tilt 3D + bords or + SVG inline) ====== -->
+      <div class="grid gap-5 md:grid-cols-2">
+        <!-- NIVELEUSES -->
+        <div
+          class="group relative rounded-2xl p-[1px]
+                 bg-[conic-gradient(at_20%_20%,rgba(220,193,118,.85),rgba(255,255,255,.12),rgba(220,193,118,.85))]
+                 transition-transform"
+          @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal
+        >
+          <div
+            class="rounded-2xl h-full bg-white/[.06] backdrop-blur
+                   ring-1 ring-white/10 shadow-[0_30px_80px_-30px_rgba(0,0,0,.65)]
+                   p-4 flex items-center gap-4
+                   [transform:perspective(900px)_rotateX(var(--rx))_rotateY(var(--ry))] will-change-transform duration-150"
+          >
+            <div class="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden ring-1 ring-bk-gold/45 bg-[#0f141a]">
+              <!-- SVG 3D – Niveleuse -->
+              <svg viewBox="0 0 120 120" class="w-full h-full" role="img" aria-label="Niveleuse">
+                <defs>
+                  <linearGradient id="gPlate" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#1a2430"/><stop offset="1" stop-color="#0e141a"/>
+                  </linearGradient>
+                  <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#dcc176"/><stop offset="1" stop-color="#bfa25f"/>
+                  </linearGradient>
+                  <linearGradient id="gDark" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#26323f"/><stop offset="1" stop-color="#151e27"/>
+                  </linearGradient>
+                </defs>
+                <!-- Plateau iso -->
+                <g transform="translate(0,6)">
+                  <path d="M60 4 110 24 60 44 10 24Z" fill="url(#gPlate)" stroke="url(#gGold)" stroke-width="1.2"/>
+                  <path d="M60 44V96L10 76V24Z" fill="#0d131a" opacity=".45"/>
+                  <path d="M60 44V96L110 76V24Z" fill="#0d131a" opacity=".25"/>
+                </g>
+                <!-- Machine -->
+                <g transform="translate(8,14)">
+                  <rect x="26" y="52" width="52" height="9" rx="2" fill="url(#gDark)"/>
+                  <rect x="49" y="38" width="16" height="11" rx="2" fill="#dfe6ef"/>
+                  <rect x="51" y="40" width="12" height="7" rx="1.5" fill="#0e1922"/>
+                  <rect x="18" y="58" width="22" height="5" rx="1.5" fill="url(#gGold)"/>
+                  <rect x="36" y="46" width="18" height="4" rx="1.5" fill="#b7c0cc"/>
+                  <g fill="#0c131a" stroke="#a6b0be" stroke-width="1.4">
+                    <circle cx="32" cy="66" r="7"/><circle cx="72" cy="66" r="7"/>
+                  </g>
+                  <g fill="#d8dee9"><circle cx="32" cy="66" r="3"/><circle cx="72" cy="66" r="3"/></g>
+                </g>
+              </svg>
+              <span class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition
+                           bg-gradient-to-tr from-white/10 via-transparent to-transparent"></span>
             </div>
-            <div class="equip-card ring-gold" @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal>
-              <div class="icon-iso iso-crane"></div>
-              <div class="equip-title">Grues & PEMP</div>
-              <div class="equip-count"><span v-countup="18">18</span> unités</div>
-            </div>
-            <div class="equip-card ring-gold" @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal>
-              <div class="icon-iso iso-loader"></div>
-              <div class="equip-title">Chargeuses</div>
-              <div class="equip-count"><span v-countup="22">22</span> unités</div>
-            </div>
-            <div class="equip-card ring-gold" @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal>
-              <div class="icon-iso iso-formwork"></div>
-              <div class="equip-title">Coffrages</div>
-              <div class="equip-count"><span v-countup="38">38</span> jeux</div>
+            <div class="min-w-0">
+              <div class="text-sm uppercase tracking-wider text-white/70">Niveleuses</div>
+              <div class="mt-1 text-2xl font-extrabold">
+                <span v-countup="12">12</span> <span class="text-white/70 text-base font-semibold">unités</span>
+              </div>
+              <div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-bk-gold w-[72%]"></div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="stats-card card ring-gold" v-reveal>
-            <div class="stats-row">
-              <div>
-                <div class="stats-label">Respect délais</div>
-                <div class="stats-value"><span v-countup="96">96</span>%</div>
-              </div>
-              <div class="radial small" style="--val:96"></div>
+        <!-- GRUES & PEMP -->
+        <div
+          class="group relative rounded-2xl p-[1px]
+                 bg-[conic-gradient(at_20%_20%,rgba(220,193,118,.85),rgba(255,255,255,.12),rgba(220,193,118,.85))]"
+          @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal
+        >
+          <div
+            class="rounded-2xl h-full bg-white/[.06] backdrop-blur
+                   ring-1 ring-white/10 shadow-[0_30px_80px_-30px_rgba(0,0,0,.65)]
+                   p-4 flex items-center gap-4
+                   [transform:perspective(900px)_rotateX(var(--rx))_rotateY(var(--ry))] will-change-transform duration-150"
+          >
+            <div class="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden ring-1 ring-bk-gold/45 bg-[#0f141a]">
+              <!-- SVG 3D – Grue -->
+              <svg viewBox="0 0 120 120" class="w-full h-full" role="img" aria-label="Grues et PEMP">
+                <defs>
+                  <linearGradient id="cgOld" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#dcc176"/><stop offset="1" stop-color="#bfa25f"/>
+                  </linearGradient>
+                  <linearGradient id="cSteel" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#e7edf6"/><stop offset="1" stop-color="#b2bcc8"/>
+                  </linearGradient>
+                </defs>
+                <!-- sol -->
+                <g opacity=".9">
+                  <path d="M60 22 108 40 60 58 12 40Z" fill="#121a22" stroke="url(#cgOld)" stroke-width="1.2"/>
+                </g>
+                <!-- mât treillis -->
+                <g stroke="url(#cgOld)" stroke-width="1.2" fill="none" transform="translate(0,2)">
+                  <rect x="54" y="26" width="8" height="40"/>
+                  <path d="M54 26l8 40M62 26l-8 40M54 36h8M54 46h8M54 56h8"/>
+                </g>
+                <!-- base -->
+                <rect x="52" y="68" width="12" height="10" fill="#1a2430"/>
+                <!-- flèche -->
+                <rect x="34" y="30" width="54" height="4" rx="2" fill="url(#cgOld)"/>
+                <rect x="84" y="34" width="4" height="16" rx="2" fill="url(#cSteel)"/>
+                <!-- chariot -->
+                <circle cx="66" cy="32" r="3" fill="#0f141a" stroke="#c6ced8" stroke-width="1"/>
+                <path d="M66 35v16" stroke="#c6ced8" stroke-width="1.3"/>
+                <rect x="64" y="50" width="4" height="6" rx="1" fill="#c6ced8"/>
+              </svg>
+              <span class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition
+                           bg-gradient-to-tr from-white/10 via-transparent to-transparent"></span>
             </div>
-            <div class="stats-row">
-              <div>
-                <div class="stats-label">NC majeures</div>
-                <div class="stats-value"><span v-countup="0">0</span></div>
+            <div class="min-w-0">
+              <div class="text-sm uppercase tracking-wider text-white/70">Grues &amp; PEMP</div>
+              <div class="mt-1 text-2xl font-extrabold">
+                <span v-countup="18">18</span> <span class="text-white/70 text-base font-semibold">unités</span>
               </div>
-              <div class="radial small ok" style="--val:100"></div>
+              <div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-bk-gold w-[80%]"></div>
+              </div>
             </div>
-            <div class="stats-row">
-              <div>
-                <div class="stats-label">Satisfaction</div>
-                <div class="stats-value"><span v-countup="98">98</span>%</div>
+          </div>
+        </div>
+
+        <!-- CHARGEUSES -->
+        <div
+          class="group relative rounded-2xl p-[1px]
+                 bg-[conic-gradient(at_20%_20%,rgba(220,193,118,.85),rgba(255,255,255,.12),rgba(220,193,118,.85))]"
+          @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal
+        >
+          <div
+            class="rounded-2xl h-full bg-white/[.06] backdrop-blur
+                   ring-1 ring-white/10 shadow-[0_30px_80px_-30px_rgba(0,0,0,.65)]
+                   p-4 flex items-center gap-4
+                   [transform:perspective(900px)_rotateX(var(--rx))_rotateY(var(--ry))] will-change-transform duration-150"
+          >
+            <div class="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden ring-1 ring-bk-gold/45 bg-[#0f141a]">
+              <!-- SVG 3D – Chargeuse -->
+              <svg viewBox="0 0 120 120" class="w-full h-full" role="img" aria-label="Chargeuse">
+                <defs>
+                  <linearGradient id="lGold" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#dcc176"/><stop offset="1" stop-color="#bfa25f"/>
+                  </linearGradient>
+                </defs>
+                <!-- sol -->
+                <path d="M60 22 108 40 60 58 12 40Z" fill="#121a22" stroke="url(#lGold)" stroke-width="1.2"/>
+                <!-- châssis -->
+                <rect x="34" y="52" width="44" height="9" rx="2" fill="#22303d"/>
+                <rect x="46" y="40" width="16" height="10" rx="2" fill="#e6ecf4"/>
+                <rect x="48" y="42" width="12" height="6" rx="1.2" fill="#0e1922"/>
+                <!-- bras + godet -->
+                <path d="M68 52l16-6 6 10-14 5z" fill="#c7cfdb"/>
+                <path d="M90 54l8 6-10 4-6-2z" fill="url(#lGold)"/>
+                <!-- roues -->
+                <g fill="#0c131a" stroke="#a6b0be" stroke-width="1.4">
+                  <circle cx="42" cy="66" r="7"/><circle cx="70" cy="66" r="7"/>
+                </g>
+                <g fill="#d8dee9"><circle cx="42" cy="66" r="3"/><circle cx="70" cy="66" r="3"/></g>
+              </svg>
+              <span class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition
+                           bg-gradient-to-tr from-white/10 via-transparent to-transparent"></span>
+            </div>
+            <div class="min-w-0">
+              <div class="text-sm uppercase tracking-wider text-white/70">Chargeuses</div>
+              <div class="mt-1 text-2xl font-extrabold">
+                <span v-countup="22">22</span> <span class="text-white/70 text-base font-semibold">unités</span>
               </div>
-              <div class="radial small" style="--val:98"></div>
+              <div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-bk-gold w-[64%]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COFFRAGES -->
+        <div
+          class="group relative rounded-2xl p-[1px]
+                 bg-[conic-gradient(at_20%_20%,rgba(220,193,118,.85),rgba(255,255,255,.12),rgba(220,193,118,.85))]"
+          @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal
+        >
+          <div
+            class="rounded-2xl h-full bg-white/[.06] backdrop-blur
+                   ring-1 ring-white/10 shadow-[0_30px_80px_-30px_rgba(0,0,0,.65)]
+                   p-4 flex items-center gap-4
+                   [transform:perspective(900px)_rotateX(var(--rx))_rotateY(var(--ry))] will-change-transform duration-150"
+          >
+            <div class="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden ring-1 ring-bk-gold/45 bg-[#0f141a]">
+              <!-- SVG 3D – Coffrages empilés -->
+              <svg viewBox="0 0 120 120" class="w-full h-full" role="img" aria-label="Coffrages">
+                <defs>
+                  <linearGradient id="fGold" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#dcc176"/><stop offset="1" stop-color="#bfa25f"/>
+                  </linearGradient>
+                </defs>
+                <g>
+                  <path d="M60 22 108 40 60 58 12 40Z" fill="#121a22" stroke="url(#fGold)" stroke-width="1.2"/>
+                  <!-- panneaux -->
+                  <g transform="translate(0,4)">
+                    <path d="M34 36l22 8v16l-22-8z" fill="#e7edf5" stroke="#9aa5b3"/>
+                    <path d="M56 44l22-8v16l-22 8z" fill="#d9e2ec" stroke="#8f9aa8"/>
+                    <circle cx="48" cy="44" r="1.5" fill="#7e8896"/>
+                    <circle cx="72" cy="44" r="1.5" fill="#7e8896"/>
+                  </g>
+                </g>
+              </svg>
+              <span class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition
+                           bg-gradient-to-tr from-white/10 via-transparent to-transparent"></span>
+            </div>
+            <div class="min-w-0">
+              <div class="text-sm uppercase tracking-wider text-white/70">Coffrages</div>
+              <div class="mt-1 text-2xl font-extrabold">
+                <span v-countup="38">38</span> <span class="text-white/70 text-base font-semibold">jeux</span>
+              </div>
+              <div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full rounded-full bg-bk-gold w-[88%]"></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </section>
+
+      <!-- ====== STATS (radiaux + barres, compact) ====== -->
+      <div class="relative rounded-2xl p-[1px]
+                  bg-[conic-gradient(at_80%_20%,rgba(220,193,118,.85),rgba(255,255,255,.12),rgba(220,193,118,.85))]"
+           v-reveal>
+        <div class="rounded-2xl bg-white/[.06] backdrop-blur ring-1 ring-white/10
+                    shadow-[0_40px_100px_-40px_rgba(0,0,0,.65)] p-4 sm:p-6">
+          <!-- Row: Délais -->
+          <div class="flex items-center justify-between gap-4 p-3 sm:p-4 rounded-xl bg-white/5 ring-1 ring-white/10">
+            <div class="min-w-0">
+              <div class="text-sm text-white/70">Respect des délais</div>
+              <div class="mt-1 text-3xl font-extrabold">
+                <span v-countup="96">96</span><span class="text-xl align-super ml-0.5">%</span>
+              </div>
+              <div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden w-44">
+                <div class="h-full rounded-full bg-bk-gold" style="width:96%"></div>
+              </div>
+            </div>
+            <div
+              class="relative w-20 h-20 sm:w-24 sm:h-24 grid place-items-center rounded-full
+                     ring-1 ring-white/10
+                     [background:conic-gradient(theme(colors.bk.gold)_var(--p),_rgba(255,255,255,.12)_0)]"
+              style="--p:96%" aria-label="96% de projets livrés à l'heure"
+            >
+              <div class="w-[72%] h-[72%] rounded-full bg-[#151e27] ring-1 ring-white/10 grid place-items-center">
+                <div class="text-sm font-bold">96%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row: NC majeures -->
+          <div class="mt-4 flex items-center justify-between gap-4 p-3 sm:p-4 rounded-xl bg-white/5 ring-1 ring-white/10">
+            <div class="min-w-0">
+              <div class="text-sm text-white/70">NC majeures</div>
+              <div class="mt-1 text-3xl font-extrabold"><span v-countup="0">0</span></div>
+              <div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden w-44">
+                <div class="h-full rounded-full bg-bk-gold" style="width:100%"></div>
+              </div>
+            </div>
+            <div
+              class="relative w-20 h-20 sm:w-24 sm:h-24 grid place-items-center rounded-full
+                     ring-1 ring-white/10
+                     [background:conic-gradient(theme(colors.bk.gold)_var(--p),_rgba(255,255,255,.12)_0)]"
+              style="--p:100%" aria-label="100% conforme sans NC majeures"
+            >
+              <div class="w-[72%] h-[72%] rounded-full bg-[#151e27] ring-1 ring-white/10 grid place-items-center">
+                <svg viewBox="0 0 24 24" class="w-6 h-6"><path fill="currentColor" d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5z"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row: Satisfaction -->
+          <div class="mt-4 flex items-center justify-between gap-4 p-3 sm:p-4 rounded-xl bg-white/5 ring-1 ring-white/10">
+            <div class="min-w-0">
+              <div class="text-sm text-white/70">Satisfaction clients</div>
+              <div class="mt-1 text-3xl font-extrabold">
+                <span v-countup="98">98</span><span class="text-xl align-super ml-0.5">%</span>
+              </div>
+              <div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden w-44">
+                <div class="h-full rounded-full bg-bk-gold" style="width:98%"></div>
+              </div>
+            </div>
+            <div
+              class="relative w-20 h-20 sm:w-24 sm:h-24 grid place-items-center rounded-full
+                     ring-1 ring-white/10
+                     [background:conic-gradient(theme(colors.bk.gold)_var(--p),_rgba(255,255,255,.12)_0)]"
+              style="--p:98%" aria-label="98% de satisfaction"
+            >
+              <div class="w-[72%] h-[72%] rounded-full bg-[#151e27] ring-1 ring-white/10 grid place-items-center">
+                <div class="text-sm font-bold">98%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Légende compacte -->
+          <div class="mt-4 flex items-center gap-4 text-xs text-white/60">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-3 h-3 rounded-full bg-bk-gold ring-1 ring-bk-gold/40"></span>
+              Performance
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-3 h-3 rounded-full bg-white/15 ring-1 ring-white/10"></span>
+              Référence
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /stats -->
+    </div>
+  </div>
+</section>
+
+
 
     <!-- ================= RFP / DEVIS ================= -->
     <section id="rfp" class="py-10 md:py-14">
