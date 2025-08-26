@@ -3,31 +3,37 @@ import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { route as ziggyRoute } from 'ziggy-js'
 
+/* ---- types pour usePage() ---- */
 type PageAuth = { user?: Record<string, unknown> | null }
 type PageProps = { auth?: PageAuth }
 
 const page = usePage<PageProps>()
 const user = computed(() => page.props.auth?.user ?? null)
 
+/* ---- helper route() ---- */
 const route = (name: string, params?: any, absolute?: boolean) =>
   ziggyRoute(name, params, absolute, (window as any).Ziggy)
 
+/* ---- état UI ---- */
 const open = ref(false)
 const scrolled = ref(false)
 const progress = ref(0)
 
+/* smart hide du topbar */
 const SMART_HIDE = true
 const topbarPinned = ref(true)
 const lastY = ref(0)
 const lastDeltaDown = ref(false)
 const headerHover = ref(false)
 
-const phoneDisplay = ref('+212 5 22 00 00 00')
-const phoneHref    = ref('tel:+212522000000')
-const whatsappHref = ref('https://wa.me/212600000000')
+/* ---- INFOS réelles BK Construction (Tanger) ---- */
+const phoneDisplay = ref('+212 7 70 55 60 21')
+const phoneHref    = ref('tel:+212770556021')
+const whatsappHref = ref('https://wa.me/212770556021') // même numéro
 const email        = ref('contact@bkconstruction.ma')
-const city         = ref('Casablanca, Maroc')
+const city         = ref('Tanger, Maroc')
 
+/* ui misc */
 const showUp = ref(false)
 function scrollToTop(){ window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
@@ -81,7 +87,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div :class="['min-h-screen bg-bk-night text-bk-off relative overflow-x-hidden', open ? 'overflow-hidden' : '']">
-
     <!-- BACKDROP -->
     <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
       <div class="absolute inset-0 opacity-[.06] mix-blend-overlay
@@ -117,12 +122,11 @@ onBeforeUnmount(() => {
           class="absolute top-0 left-0 right-0 hidden lg:flex h-10 items-center justify-between
                  text-[13px] text-white/85 border-b border-white/10
                  transition-all duration-300 ease-out bg-gradient-to-b from-white/5 to-transparent"
-          :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[calc(100%+1px)]'"
-        >
+          :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[calc(100%+1px)]'">
           <div class="flex items-center gap-6">
             <span class="inline-flex items-center gap-2 rounded-md px-2 py-1 font-extrabold text-[12px]
                          text-white bg-white/10 ring-1 ring-white/20 shadow-inner">MA</span>
-            <span class="text-white/85">Entreprise marocaine de BTP — Qualité • Sécurité • Délais</span>
+            <span class="text-white/85">Entreprise de BTP à Tanger — Qualité • Sécurité • Délais</span>
 
             <a :href="phoneHref" class="inline-flex items-center gap-2 hover:text-bk-gold">
               <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>
@@ -152,7 +156,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- barre peek -->
+        <!-- petite barre "peek" quand le topbar est caché -->
         <div class="absolute top-0 left-0 right-0 hidden lg:block h-1.5
                     bg-gradient-to-r from-bk-gold/40 via-white/20 to-bk-gold/40
                     rounded-b-full transition-all duration-300"
@@ -168,8 +172,7 @@ onBeforeUnmount(() => {
           </Link>
 
           <nav class="hidden md:flex items-center gap-1 rounded-2xl px-1 py-1 bg-white/5 ring-1 ring-white/10">
-            <a href="#services" class="group relative rounded-full px-4 py-2 text-white/90 transition
-                                      hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Services</a>
+            <a href="#services" class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Services</a>
             <a href="#projects" class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Réalisations</a>
             <a href="#process"  class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Méthode</a>
             <a href="#rfp"      class="group relative rounded-full px-4 py-2 text-white/90 transition hover:text-white hover:-translate-y-0.5 ring-1 ring-transparent hover:ring-bk-gold/40">Appels d’offres</a>
@@ -205,7 +208,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- spacer -->
+    <!-- spacer sous header -->
     <div class="h-[76px] lg:h-[108px]" aria-hidden="true"></div>
 
     <!-- Overlay + Drawer mobile -->
@@ -258,7 +261,7 @@ onBeforeUnmount(() => {
     <!-- CONTENU -->
     <main id="page-content"><slot /></main>
 
-    <!-- FOOTER -->
+    <!-- FOOTER (cohérent or subtil + verre) -->
     <footer class="mt-16 text-sm relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
         <div class="relative rounded-2xl">
@@ -270,7 +273,6 @@ onBeforeUnmount(() => {
             <div class="relative rounded-2xl bg-white/[.06] backdrop-blur border border-white/10
                         shadow-[0_40px_120px_-40px_rgba(0,0,0,.65)]">
 
-              <!-- grain SANS data-URI (pas d’URL, donc pas d’erreur de parseur) -->
               <div class="pointer-events-none absolute inset-0 rounded-2xl opacity-10
                           [background-image:radial-gradient(rgba(255,255,255,.28)_0.6px,transparent_0.6px)]
                           [background-size:6px_6px]"></div>
@@ -362,7 +364,7 @@ onBeforeUnmount(() => {
       </div>      
     </footer>
 
-    <!-- Floating actions -->
+    <!-- Actions flottantes -->
     <a :href="whatsappHref" target="_blank" rel="noopener"
        class="fixed bottom-5 right-5 inline-flex items-center justify-center w-12 h-12 rounded-full
               bg-white/10 border border-white/10 hover:border-bk-gold/60 backdrop-blur z-40">
@@ -373,7 +375,7 @@ onBeforeUnmount(() => {
       class="fixed bottom-5 right-20 md:right-24 inline-flex items-center justify-center w-10 h-10 rounded-full
              bg-white/10 border border-white/15 hover:border-bk-gold/60 backdrop-blur z-40 transition"
       aria-label="Retour en haut">
-      <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l6 6-1.4 1.4L13 7.8V20h-2V7.8L7.4 11.4 6 10l6-6z"/></svg>
+      <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l6 6-1.4 1.4L13 7.8V20h-2V7.8L7.4 11.4 6 10l6-6z"/></svg> 
     </button>
   </div>
 </template>
