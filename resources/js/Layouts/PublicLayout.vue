@@ -401,8 +401,7 @@ function isActiveRoute(prefixes: string[]){
               <ul class="grid gap-2 text-bk-off/92">
                 <li><Link :href="route('public.projects')" class="hover:text-bk-gold">Réalisations</Link></li>
                 <li><Link :href="route('public.posts')" class="hover:text-bk-gold">Actualités</Link></li>
-                <li><a href="/terms" class="hover:text-bk-gold">Conditions générales</a></li>
-                <li><a href="/privacy" class="hover:text-bk-gold">Politique de confidentialité</a></li>
+                
               </ul>
             </div>
 
@@ -415,19 +414,7 @@ function isActiveRoute(prefixes: string[]){
                 <li class="text-bk-off/75">{{ city }}</li>
               </ul>
 
-              <!-- Abonnement : clip + largeur maîtrisée -->
-              <form class="flex items-stretch gap-2 w-full max-w-md bg-white/[.08] ring-1 ring-white/20 px-2 py-1.5
-                          rounded-lg backdrop-blur overflow-hidden"
-                    @submit.prevent>
-                <input type="email" placeholder="Votre email" aria-label="Votre email"
-                       class="flex-1 min-w-0 bg-transparent outline-none border-0 text-white placeholder:text-white/60 px-2" />
-                <button type="button"
-                        class="rounded-md px-4 py-2 bg-bk-gold text-bk-night font-extrabold whitespace-nowrap
-                               hover:brightness-95 hover:-translate-y-0.5 transition
-                               ring-1 ring-bk-gold/60 shadow-[0_10px_30px_-12px_rgba(220,193,118,.55)]">
-                  S’abonner
-                </button>
-              </form>
+             
             </div>
           </div>
 

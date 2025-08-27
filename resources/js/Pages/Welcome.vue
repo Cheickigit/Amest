@@ -22,11 +22,13 @@ type Project   = {
   status:'brouillon'|'publié'; cover_image?:string|null; media?:MediaItem[]; client?:string|null; company?:string|null
 }
 type Post      = { id:number; title:string; slug?:string|null; excerpt?:string|null; cover_image?:string|null; published_at?:string|null }
+type FaqItem   = { question: string; answer: string }
 
 const props = defineProps<{
   heroProjects?: Project[] | null
   projects?: Project[] | null
   posts?: Post[] | null
+  faqs?: FaqItem[] | null
 }>()
 
 /* sources sûres pour le template */
@@ -101,6 +103,20 @@ function resetTilt(e: MouseEvent) {
 }
 
 /* ---------- Devis express (public) ---------- */
+// CONFIG
+const ALLOWED = [
+  'application/pdf','application/x-zip-compressed','application/zip',
+  'application/x-rar-compressed','application/x-7z-compressed',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/octet-stream' // DWG/DXF parfois ainsi
+]
+const EXT_ALLOWED = ['.pdf','.zip','.rar','.7z','.doc','.docx','.xls','.xlsx','.dwg','.dxf']
+const MAX_FILE_MB = 20
+const MAX_FILES   = 10
+
 const qForm = useForm({
   name: '', company: '', email: '', phone: '',
   city: '', project_type: '', budget: '',
@@ -108,18 +124,81 @@ const qForm = useForm({
   files: [] as File[],
   hp: ''
 })
-function pickFiles(e: Event){ const i = e.target as HTMLInputElement; if (i.files) qForm.files = Array.from(i.files) }
+const filesClientError = ref('')
+const successMsg       = ref('')
+
+function hasAllowedExt(name:string){ return EXT_ALLOWED.some(ext => name.toLowerCase().endsWith(ext)) }
+function formatSize(bytes:number|undefined|null){
+  if (bytes == null) return ''
+  const u = ['o','Ko','Mo','Go']; let i = 0; let v = bytes
+  while (v >= 1024 && i < u.length-1){ v/=1024; i++ }
+  return `${v.toFixed(v>=10||i===0?0:1)} ${u[i]}`
+}
+
+function pickFiles(e: Event) {
+  try{
+    const input = e.target as HTMLInputElement
+    if (!input.files) return
+    const picked = Array.from(input.files)
+    const out: File[] = [...qForm.files]
+    let error = ''
+
+    for (const f of picked) {
+      if (out.length >= MAX_FILES) { error = `Maximum ${MAX_FILES} fichiers.`; break }
+      const typeOk = ALLOWED.includes(f.type) || hasAllowedExt(f.name)
+      const sizeOk = f.size <= MAX_FILE_MB * 1024 * 1024
+      if (!typeOk) { error = `Format non autorisé: ${f.name}`; break }
+      if (!sizeOk) { error = `Taille > ${MAX_FILE_MB} Mo: ${f.name}`; break }
+      out.push(f)
+    }
+
+    if (error) {
+      filesClientError.value = error
+    } else {
+      filesClientError.value = ''
+      qForm.files = out
+    }
+    input.value = '' // autorise re-sélection du même fichier
+  } catch {
+    filesClientError.value = 'Impossible de lire le fichier. Réessaie.'
+  }
+}
+function removeFile(i:number){ qForm.files.splice(i,1) }
+
 function submitQuote() {
+  successMsg.value = ''
+  filesClientError.value = ''
+
   qForm.post(r('forms.quote.store', {}, false, '/devis'), {
     forceFormData: true,
     preserveScroll: true,
-    onSuccess: () => qForm.reset('message', 'files'),
+    onSuccess: () => {
+      successMsg.value = 'Merci, votre demande a été envoyée. Nous revenons vers vous très vite.'
+      const keepEmail = qForm.email
+      qForm.reset('name','company','phone','city','project_type','budget','desired_date','message','files','hp')
+      qForm.email = keepEmail
+    },
   })
 }
-function focusDevis() { (document.getElementById('devis-name') as HTMLInputElement | null)?.focus() }
+function focusDevis() {
+  document.getElementById('devis')?.scrollIntoView({ behavior:'smooth', block:'start' })
+  setTimeout(()=> (document.getElementById('devis-name') as HTMLInputElement | null)?.focus(), 240)
+}
 
-/* ---------- Utils ---------- */
-const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'numeric', month:'short', day:'2-digit' }) : '—'
+/* ---------- FAQ dynamique ---------- */
+const faqList = computed<FaqItem[]>(() => props.faqs && props.faqs.length
+  ? props.faqs
+  : [
+      { question:'Quels types de projets réalisez-vous ?',
+        answer:'VRD/voiries, bâtiments, génie civil et ouvrages hydrauliques. De l’étude à la livraison, avec phasage et engagements de délai.' },
+      { question:'Comment obtenir un devis ?',
+        answer:'Via le formulaire “Devis express” ci-dessus (vous pouvez joindre votre DCE). Nous répondons sous 24h ouvrées.' },
+      { question:'Intervenez-vous hors Tanger ?',
+        answer:'Oui, nous intervenons dans tout le Nord et au-delà selon l’envergure du projet.' },
+      { question:'Êtes-vous certifiés ?',
+        answer:'Nos process s’alignent sur les référentiels ISO 9001/45001. Traçabilité et contrôle qualité renforcés.' },
+    ]
+)
 </script>
 
 <template>
@@ -224,15 +303,14 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
       </div>
     </section>
 
-    <!-- ================= PARTENAIRES (Avanza, Biocarb + clients dynamiques) ================= -->
+    <!-- ================= PARTENAIRES (marquee circulaire) ================= -->
     <section class="py-6">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="section-title" v-reveal>Ils nous font confiance</h2>
-        <div class="marquee mt-5" v-reveal>
-          <div class="marquee-track">
-            <span v-for="(n,i) in partnerList" :key="'p1-'+i" class="logo-pill">{{ n }}</span>
-            <!-- duplication pour effet continu -->
-            <span v-for="(n,i) in partnerList" :key="'p2-'+i" class="logo-pill">{{ n }}</span>
+        <div class="marquee2" v-reveal>
+          <div class="marquee2__track" :style="{ '--d':'26s' }">
+            <span v-for="(n,i) in partnerList" :key="'m1-'+i" class="logo-pill2">{{ n }}</span>
+            <span v-for="(n,i) in partnerList" :key="'m2-'+i" class="logo-pill2">{{ n }}</span>
           </div>
         </div>
       </div>
@@ -283,7 +361,7 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
       </div>
     </section>
 
-    <!-- ================= RÉALISATIONS (UNIQUE bloc : carrousel + CTA) ================= -->
+    <!-- ================= RÉALISATIONS ================= -->
     <section id="projects" class="py-10 md:py-14">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="section-title" v-reveal>Réalisations</h2>
@@ -293,24 +371,26 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
           <div class="flex gap-6 snap-x snap-mandatory scroll-pl-4">
             <Link v-for="p in heroList" :key="p.id"
                   :href="r('public.projects.show', p.slug ?? p.id, false, `/realisations/${p.slug ?? p.id}`)"
-                  class="proj-card snap-start group">
-              <div class="proj-media">
+                  class="tile3d snap-start group">
+              <div class="tile3d__media">
                 <img v-if="p.cover_image" :src="`/storage/${p.cover_image}`" :alt="p.title" loading="lazy">
                 <div v-else class="skeleton"></div>
               </div>
-              <div class="proj-grad"></div>
-              <div class="proj-meta">
-                <span class="pill">{{ p.category || 'Projet' }}</span>
-                <h3 class="proj-title">{{ p.title }}</h3>
-                <div class="proj-sub">{{ [p.category, p.city].filter(Boolean).join(' · ') }}</div>
+              <div class="tile3d__glow"></div>
+              <div class="tile3d__grad"></div>
+              <div class="tile3d__body">
+                <div class="tile3d__top">
+                  <span class="pill">{{ p.category || 'Projet' }}</span>
+                  <span class="pill pill--ghost" v-if="p.city">{{ p.city }}</span>
+                </div>
+                <h3 class="tile3d__title">{{ p.title }}</h3>
+                <div class="tile3d__cta"><span class="btn-outline-gold">Détails du projet</span></div>
               </div>
-              <div class="proj-cta"><span class="btn-outline-gold">Détails du projet</span></div>
-              <div class="shine"></div>
             </Link>
           </div>
         </div>
 
-        <!-- CTA Voir toutes (pas de seconde grille ici) -->
+        <!-- CTA Voir toutes -->
         <div class="mt-7 flex justify-center">
           <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Toutes les réalisations</Link>
         </div>
@@ -319,54 +399,106 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
 
     <!-- ================= RFP / DEVIS ================= -->
     <section id="rfp" class="py-10 md:py-14">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="section-title" v-reveal>Appels d’offres & Devis</h2>
 
-        <div class="mt-8 card ring-gold p-6 md:p-8" v-reveal>
-          <div class="grid md:grid-cols-2 gap-8 items-start">
-            <div>
-              <h3 class="text-2xl md:text-3xl font-extrabold">Envoyez votre DCE ou faites une demande express</h3>
-              <p class="text-white/80 mt-3">
-                Réponse rapide avec chiffrage fiable, variantes et phasage réaliste.
-              </p>
-              <div class="mt-6 flex gap-3">
-                <a href="#contact" class="btn-outline-gold">Nous contacter</a>
-                <a href="#devis" class="btn-ghost" @click="focusDevis">Devis express</a>
+        <div class="mt-8 grid lg:grid-cols-2 gap-8 items-stretch" v-reveal>
+          <!-- Bloc gauche -->
+          <div class="card ring-gold p-6 md:p-8">
+            <h3 class="text-2xl md:text-3xl font-extrabold">Envoyez votre DCE ou faites une demande express</h3>
+            <p class="text-white/80 mt-3">
+              Réponse rapide avec chiffrage fiable, variantes et phasage réaliste.
+            </p>
+            <div class="mt-6 flex gap-3">
+              <a href="#contact" class="btn-outline-gold">Nous contacter</a>
+              <a href="#devis" class="btn-ghost" @click.prevent="focusDevis">Devis express</a>
+            </div>
+            <div class="mt-6 mini-bullets">
+              <span>✔️ Métrés & variantes optimisées</span>
+              <span>✔️ Délais & phasage détaillés</span>
+              <span>✔️ Proposition claire et traçable</span>
+            </div>
+          </div>
+
+          <!-- Formulaire -->
+          <form id="devis" class="card ring-gold p-6 md:p-8 grid gap-4" @submit.prevent="submitQuote" aria-describedby="quote-status">
+            <!-- succès / erreurs -->
+            <div v-if="successMsg"
+                 id="quote-status" aria-live="polite"
+                 class="rounded-lg px-3 py-2 text-sm text-emerald-300 bg-emerald-500/10 ring-1 ring-emerald-500/20">
+              {{ successMsg }}
+            </div>
+            <div v-else-if="Object.keys(qForm.errors).length"
+                 id="quote-status" aria-live="assertive"
+                 class="rounded-lg px-3 py-2 text-sm text-red-300 bg-red-500/10 ring-1 ring-red-500/20">
+              Merci de vérifier les champs saisis.
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-3">
+              <input id="devis-name" v-model="qForm.name" type="text" placeholder="Nom / Société" class="field" required />
+              <input v-model="qForm.email" type="email" placeholder="Email" class="field" />
+            </div>
+            <div class="grid md:grid-cols-2 gap-3">
+              <input v-model="qForm.phone" type="tel" placeholder="Téléphone" class="field" />
+              <input v-model="qForm.city" type="text" placeholder="Ville / Site (ex. Tanger Med)" class="field" />
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-3">
+              <select v-model="qForm.project_type" class="field">
+                <option value="" disabled>Type de projet</option>
+                <option>VRD / Voirie</option><option>Génie civil</option>
+                <option>Bâtiment</option><option>Ouvrage d’art</option><option>Autre</option>
+              </select>
+              <select v-model="qForm.budget" class="field">
+                <option value="" disabled>Budget estimatif</option>
+                <option>&lt; 1 M MAD</option><option>1–5 M MAD</option>
+                <option>5–20 M MAD</option><option>&gt; 20 M MAD</option>
+              </select>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-3">
+              <input v-model="qForm.desired_date" type="date" class="field" placeholder="Échéance souhaitée" />
+              <input v-model="qForm.company" type="text" class="field" placeholder="Société (optionnel)" />
+            </div>
+
+            <textarea v-model="qForm.message" rows="3" placeholder="Votre besoin (lieu, délais, budget…)" class="field"></textarea>
+
+            <!-- Upload -->
+            <div class="space-y-2">
+              <label class="upload">
+                <input type="file" multiple
+                       accept=".pdf,.zip,.rar,.7z,.doc,.docx,.xls,.xlsx,.dwg,.dxf"
+                       class="sr-only" @change="pickFiles" />
+                <span class="upload-ui">
+                  Joindre DCE / plans — <span class="opacity-80">{{ qForm.files.length }} fichier(s)</span>
+                </span>
+              </label>
+              <div class="text-xs text-white/50">
+                Formats: PDF, ZIP, RAR, 7Z, DOC(X), XLS(X), DWG, DXF — Max 20 Mo / fichier, 10 fichiers.
               </div>
-              <div class="mt-6 mini-bullets">
-                <span>✔️ Métrés & variantes optimisées</span>
-                <span>✔️ Délais & phasage détaillés</span>
-                <span>✔️ Proposition claire et traçable</span>
+              <div v-if="filesClientError" class="text-sm text-red-300">{{ filesClientError }}</div>
+
+              <div v-if="qForm.files.length" class="flex flex-wrap gap-2 pt-1">
+                <div v-for="(f,i) in qForm.files" :key="i"
+                     class="inline-flex items-center gap-2 px-2 h-8 rounded-lg bg-white/10 ring-1 ring-white/15">
+                  <span class="truncate max-w-[18ch]">{{ f.name }}</span>
+                  <span class="text-[11px] text-white/60">{{ formatSize(f.size) }}</span>
+                  <button type="button" class="text-white/60 hover:text-red-300 text-xs" @click="removeFile(i)">✕</button>
+                </div>
               </div>
             </div>
 
-            <!-- FORM devis express -->
-            <form id="devis" class="grid gap-3" @submit.prevent="submitQuote">
-              <div class="grid md:grid-cols-2 gap-3">
-                <input id="devis-name" v-model="qForm.name" type="text" placeholder="Nom / Société" class="field" required />
-                <input v-model="qForm.email" type="email" placeholder="Email" class="field" />
-              </div>
-              <div class="grid md:grid-cols-2 gap-3">
-                <input v-model="qForm.phone" type="tel" placeholder="Téléphone" class="field" />
-                <input v-model="qForm.city" type="text" placeholder="Ville / Site (ex. Tanger Med)" class="field" />
-              </div>
-              <textarea v-model="qForm.message" rows="3" placeholder="Votre besoin (lieu, délais, budget estimatif…)" class="field"></textarea>
+            <input v-model="qForm.hp" type="text" class="sr-only" tabindex="-1" autocomplete="off" />
 
-              <label class="upload">
-                <input type="file" multiple accept=".pdf,.zip,.rar,.7z,.doc,.docx,.xls,.xlsx,.dwg,.dxf" class="sr-only" @change="pickFiles" />
-                <span class="upload-ui">Joindre DCE / plans (PDF, ZIP) — <span class="opacity-80">{{ qForm.files.length }} fichier(s)</span></span>
-              </label>
-
-              <input v-model="qForm.hp" type="text" class="sr-only" tabindex="-1" autocomplete="off" />
-
-              <button type="submit" class="btn-outline-gold w-fit" :disabled="qForm.processing">
+            <div class="flex items-center gap-3 pt-1">
+              <button type="submit" class="btn-outline-gold" :disabled="qForm.processing">
                 {{ qForm.processing ? 'Envoi…' : 'Envoyer' }}
               </button>
-
-              <div v-if="Object.keys(qForm.errors).length" class="text-sm text-red-300 mt-1">Merci de vérifier les champs saisis.</div>
-              <div v-if="qForm.progress" class="h-1 rounded bg-white/10 overflow-hidden"><div class="h-1 bg-bk-gold" :style="{ width: `${qForm.progress.percentage}%` }"></div></div>
-            </form>
-          </div>
+              <div v-if="qForm.progress" class="flex-1 h-1 rounded bg-white/10 overflow-hidden">
+                <div class="h-1 bg-bk-gold transition-all" :style="{ width: `${qForm.progress.percentage}%` }"></div>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </section>
@@ -377,43 +509,63 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
         <h2 class="section-title" v-reveal>Actualités</h2>
 
         <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <!-- À la une -->
+          <!-- À la une (tile3d feature) -->
           <Link v-if="postList[0]"
                 :href="r('public.posts.show', postList[0].slug ?? postList[0].id, false, `/actualites/${postList[0].slug ?? postList[0].id}`)"
-                class="news-feature group sm:col-span-2">
-            <div class="news-media">
+                class="tile3d tile3d--feature group sm:col-span-2">
+            <div class="tile3d__media">
               <img v-if="postList[0].cover_image" :src="`/storage/${postList[0].cover_image}`" :alt="postList[0].title" loading="lazy">
               <div v-else class="skeleton"></div>
             </div>
-            <div class="news-grad"></div>
-            <div class="news-meta">
+            <div class="tile3d__glow"></div>
+            <div class="tile3d__grad"></div>
+            <div class="tile3d__body">
               <span class="pill pill-light">À la une</span>
-              <h3 class="news-title lg:text-3xl">{{ postList[0].title }}</h3>
-              <p v-if="postList[0].excerpt" class="news-excerpt line-clamp-2">{{ postList[0].excerpt }}</p>
+              <h3 class="tile3d__title lg:text-3xl">{{ postList[0].title }}</h3>
+              <p v-if="postList[0].excerpt" class="tile3d__excerpt line-clamp-2">{{ postList[0].excerpt }}</p>
               <span class="btn-outline-gold mt-3">Lire l’article</span>
             </div>
-            <div class="shine"></div>
           </Link>
 
           <!-- Autres -->
           <Link v-for="a in postList.slice(1)" :key="a.id"
                 :href="r('public.posts.show', a.slug ?? a.id, false, `/actualites/${a.slug ?? a.id}`)"
-                class="news-card v2 group">
-            <div class="news-media h-40">
+                class="tile3d tile3d--news group">
+            <div class="tile3d__media">
               <img v-if="a.cover_image" :src="`/storage/${a.cover_image}`" :alt="a.title" loading="lazy">
               <div v-else class="skeleton"></div>
             </div>
-            <div class="news-body">
-              <h3 class="news-title">{{ a.title }}</h3>
-              <p v-if="a.excerpt" class="news-excerpt line-clamp-2">{{ a.excerpt }}</p>
-              <div class="news-date">{{ fmt(a.published_at || undefined) }}</div>
+            <div class="tile3d__glow"></div>
+            <div class="tile3d__grad"></div>
+            <div class="tile3d__body tile3d__body--news">
+              <h3 class="tile3d__title">{{ a.title }}</h3>
+              <p v-if="a.excerpt" class="tile3d__excerpt line-clamp-2">{{ a.excerpt }}</p>
+              <div class="tile3d__meta">{{ fmt(a.published_at || undefined) }}</div>
             </div>
-            <div class="shine"></div>
           </Link>
         </div>
 
         <div class="mt-7 flex justify-center">
           <Link :href="r('public.posts', {}, false, '/actualites')" class="btn-outline-gold">Toutes les actualités</Link>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FAQ ================= -->
+    <section id="faq" class="py-10 md:py-14">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="section-title" v-reveal>FAQ</h2>
+
+        <div class="mt-8 grid gap-3" v-reveal>
+          <details v-for="(f, i) in faqList" :key="i" class="faq">
+            <summary class="faq__q">
+              <span class="faq__icon" aria-hidden="true"></span>
+              <span class="faq__txt">{{ f.question }}</span>
+            </summary>
+            <div class="faq__a">
+              {{ f.answer }}
+            </div>
+          </details>
         </div>
       </div>
     </section>
@@ -435,9 +587,9 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
           </ul>
 
           <div class="grid grid-cols-3 gap-2 pt-2">
-            <a href="tel:+212770556021" class="btn-outline-gold sm w-full justify-center gap-2"><span class="i i-phone"></span> Appeler</a>
-            <a href="https://wa.me/212770556021" target="_blank" rel="noopener" class="btn-ghost sm w-full justify-center gap-2"><span class="i i-wa"></span> WhatsApp</a>
-            <a href="mailto:contact@bkconstruction.ma" class="btn-ghost sm w-full justify-center gap-2"><span class="i i-mail"></span> Email</a>
+            <a href="tel:+212770556021" class="btn-outline-gold sm w-full justify-center">Appeler</a>
+            <a href="https://wa.me/212770556021" target="_blank" rel="noopener" class="btn-ghost sm w-full justify-center">WhatsApp</a>
+            <a href="mailto:contact@bkconstruction.ma" class="btn-ghost sm w-full justify-center">Email</a>
           </div>
         </div>
 
@@ -484,6 +636,9 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
 .upload{ display:inline-flex; border-radius:.8rem; border:1px dashed rgba(220,193,118,.5); color:#fdfdfe; position:relative; z-index:1 }
 .upload .upload-ui{ width:100%; padding:.85rem .95rem; border-radius:.8rem; background:rgba(220,193,118,.1) }
 
+/* bullets */
+.mini-bullets{ display:grid; gap:.5rem; color:#fdfdfe }
+
 /* Héros 3D */
 .hero-ribbon{ position:absolute; left:0; right:0; top:-10px; height:36px; opacity:.45; transform: rotate(-2deg);
   background: repeating-linear-gradient(135deg,#2a3644 0 18px,#2a3644 18px 28px,#dcc176 28px 46px,#dcc176 46px 56px) }
@@ -512,49 +667,41 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
 .iso-gc .dam,.iso-gc .pipe{ position:absolute; transform: rotateX(55deg) rotateZ(-12deg); background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(21,30,39,.55)); border:1px solid rgba(255,255,255,.14); border-radius:10px }
 .iso-gc .dam{ width:120px; height:28px; left:10%; bottom:18% } .iso-gc .pipe{ width:26px; height:26px; left:66%; bottom:34%; border-radius:999px }
 
-/* Projets premium */
-.proj-card{
+/* ===== 3D tiles (projets & actus) ===== */
+.tile3d{
   position:relative; width:360px; height:230px; overflow:hidden; border-radius:1.1rem;
   background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
-  transform:translateZ(0); transition:transform .25s ease, box-shadow .25s ease;
+  transform: translateZ(0); transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
   box-shadow:0 40px 120px -40px rgba(0,0,0,.55);
 }
-@media (min-width:768px){ .proj-card{ width:520px; height:320px } }
-.proj-card:hover{ transform: translateY(-4px); box-shadow:0 50px 140px -50px rgba(0,0,0,.7) }
-.proj-media, .proj-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
-.proj-grad{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,20,26,.0) 30%, rgba(15,20,26,.85)); }
-.proj-meta{ position:absolute; left:0; right:0; bottom:0; padding:1rem; z-index:2 }
-.proj-title{ font-weight:800; font-size:1.05rem; letter-spacing:.2px }
-.proj-sub{ color:rgba(253,253,254,.72); font-size:.9rem; margin-top:.15rem }
-.proj-cta{ position:absolute; inset:0; display:grid; place-items:center; opacity:0; transition:opacity .2s ease; z-index:2 }
-.proj-card:hover .proj-cta{ opacity:1 }
+@media (min-width:768px){ .tile3d{ width:520px; height:320px } }
+.tile3d:hover{ transform: translateY(-4px); box-shadow:0 50px 140px -50px rgba(0,0,0,.7); border-color: rgba(220,193,118,.35) }
+.tile3d__media, .tile3d__media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.tile3d__grad{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,20,26,.05) 25%, rgba(15,20,26,.88)); z-index:1 }
+.tile3d__glow{
+  position:absolute; inset:-30%; background: radial-gradient(40% 40% at 25% 20%, rgba(220,193,118,.35), transparent 60%);
+  filter: blur(36px); opacity:.65; z-index:0; transform: rotate(-8deg);
+}
+.tile3d__body{ position:absolute; inset:0; padding:1rem 1.1rem 1.2rem; z-index:2; display:flex; flex-direction:column; justify-content:flex-end; gap:.35rem }
+.tile3d__top{ display:flex; gap:.4rem; flex-wrap:wrap }
 .pill{ display:inline-flex; align-items:center; gap:.35rem; padding:.28rem .55rem; margin-bottom:.4rem;
   border-radius:.6rem; font-weight:700; font-size:.72rem; color:#0f141a;
   background:linear-gradient(90deg,#dcc176,#f3e8c1); box-shadow:0 10px 24px -14px rgba(220,193,118,.8)
 }
-
-/* Actualités premium */
-.news-feature{
-  position:relative; overflow:hidden; border-radius:1.1rem; border:1px solid rgba(255,255,255,.12);
-  min-height:280px; background:rgba(255,255,255,.06); display:block; transform:translateZ(0);
-  transition:transform .25s ease, box-shadow .25s ease; box-shadow:0 40px 120px -40px rgba(0,0,0,.55)
-}
-@media (min-width:1024px){ .news-feature{ min-height:360px } }
-.news-feature:hover{ transform: translateY(-4px); box-shadow:0 50px 140px -50px rgba(0,0,0,.7) }
-.news-card.v2{
-  position:relative; overflow:hidden; border-radius:1.1rem; border:1px solid rgba(255,255,255,.12);
-  background:rgba(255,255,255,.06); display:block; transform:translateZ(0);
-  transition:transform .25s ease, box-shadow .25s ease; box-shadow:0 40px 120px -40px rgba(0,0,0,.55)
-}
-.news-card.v2:hover{ transform: translateY(-4px); box-shadow:0 50px 140px -50px rgba(0,0,0,.7) }
-.news-media, .news-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
-.news-media{ position:relative }
-.news-grad{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,20,26,.0) 25%, rgba(15,20,26,.88)) }
-.news-meta{ position:absolute; left:0; right:0; bottom:0; padding:1rem 1.1rem 1.2rem }
-.news-title{ font-weight:800; letter-spacing:.2px }
-.news-excerpt{ color:rgba(253,253,254,.78); margin-top:.25rem }
-.news-date{ color:rgba(253,253,254,.65); font-size:.85rem; margin-top:.35rem }
+.pill--ghost{ color:#fdfdfe; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2) }
 .pill-light{ color:#0f141a; background:linear-gradient(90deg,#fff,#f6f6f7) }
+.tile3d__title{ font-weight:800; letter-spacing:.2px; font-size:1.05rem }
+.tile3d__cta{ display:grid; place-items:center; opacity:0; transition: opacity .2s ease; margin-top:.35rem }
+.tile3d:hover .tile3d__cta{ opacity:1 }
+
+/* Feature & News variants */
+.tile3d--feature{ min-height:280px }
+@media (min-width:1024px){ .tile3d--feature{ min-height:360px } }
+.tile3d--news{ height:280px }
+@media (min-width:1024px){ .tile3d--news{ height:320px } }
+.tile3d__body--news{ justify-content:flex-end }
+.tile3d__excerpt{ color:rgba(253,253,254,.78); margin-top:.2rem; font-size:.95rem }
+.tile3d__meta{ color:rgba(253,253,254,.65); font-size:.85rem; margin-top:.3rem }
 
 /* Skeleton */
 .skeleton{
@@ -570,13 +717,44 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
              radial-gradient(farthest-side, rgba(21,30,39,1) 60%, transparent 61%);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); color:#fdfdfe; font-weight:800 }
 
-/* marquee (partenaires) */
-.marquee{ position:relative; overflow:hidden; mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent) }
-.marquee-track{ display:flex; align-items:center; gap:2.25rem; padding:.25rem 0; animation: marquee 22s linear infinite; opacity:.9 }
-.marquee:hover .marquee-track{ animation-play-state: paused }
-@keyframes marquee{ from{ transform: translateX(0) } to{ transform: translateX(-50%) } }
-@media (prefers-reduced-motion: reduce){ .marquee-track{ animation: none } }
-.logo-pill{ display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1.1rem; border-radius:.8rem; font-weight:800; letter-spacing:.3px; color:#fdfdfe; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12) }
+/* marquee (partenaires) — circulaire parfaite */
+.marquee2{ position:relative; overflow:hidden; }
+.marquee2__track{
+  --d: 26s; /* durée */
+  display:flex; width:max-content;
+  animation: marquee2 var(--d) linear infinite;
+  will-change: transform;
+}
+.marquee2:hover .marquee2__track{ animation-play-state: paused; }
+@keyframes marquee2 { to { transform: translateX(-50%); } }
+.logo-pill2{
+  margin-right: 2rem;
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:.6rem 1.1rem; border-radius:.8rem; font-weight:800; letter-spacing:.3px; color:#fdfdfe;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12)
+}
+
+/* FAQ */
+.faq{
+  position:relative; border-radius:1rem; overflow:hidden; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12)
+}
+.faq + .faq{ margin-top:.5rem }
+.faq[open] .faq__q{ background:rgba(255,255,255,.06) }
+.faq__q{
+  display:flex; align-items:center; gap:.75rem; padding:1rem 1.1rem; cursor:pointer;
+  list-style:none; user-select:none; position:relative;
+}
+.faq__icon{
+  width:18px; height:18px; border-radius:6px; background: rgba(255,255,255,.12);
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M12 5v14m-7-7h14"/></svg>') center/contain no-repeat;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M12 5v14m-7-7h14"/></svg>') center/contain no-repeat;
+  transition: transform .2s ease;
+}
+.faq[open] .faq__icon{
+  transform: rotate(45deg);
+}
+.faq__txt{ font-weight:700 }
+.faq__a{ padding:0 1.1rem 1.1rem; color:#fdfdfe; opacity:.9 }
 
 /* icônes contact */
 .i{ width:18px; height:18px; display:inline-block; border-radius:5px; background: rgba(255,255,255,.12) }
@@ -585,4 +763,7 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
 .i-pin{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>') center/contain no-repeat; background:#dcc176 }
 .i-wa{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M20 12a8 8 0 1 0-14.1 5l-1.1 3.9 4-1A8 8 0 1 0 20 12zM7 18l.5-1.7a6 6 0 1 1 2.2 2.2L8 19l-1 .3L7 18z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M20 12a8 8 0 1 0-14.1 5l-1.1 3.9 4-1A8 8 0 1 0 20 12zM7 18l.5-1.7a6 6 0 1 1 2.2 2.2L8 19l-1 .3L7 18z"/></svg>') center/contain no-repeat; background:#dcc176 }
 .i-clock{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11H7v-2h4V6h2v7z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11H7v-2h4V6h2v7z"/></svg>') center/contain no-repeat; background:#dcc176 }
+
+/* util */
+.text-bk-gold{ color:#dcc176 } .bg-bk-gold{ background:#dcc176 } .text-bk-night{ color:#0f141a }
 </style>
