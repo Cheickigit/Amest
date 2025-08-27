@@ -3,47 +3,63 @@ import { Link, usePage, router } from '@inertiajs/vue3'
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { route as ziggyRoute } from 'ziggy-js'
 
-type User = { name?:string; email?:string; roles?:string[]; permissions?:string[]; last_login_at?:string; two_factor_enabled?:boolean }
-type Counts = { leads?:number; rfps?:number; drafts?:number }
-type PageProps = { auth?:{ user?:User|null }, adminCounts?:Counts, csrf_token?:string }
+/* ---------- Types ---------- */
+type User = {
+  name?: string; email?: string; roles?: string[]; permissions?: string[];
+  last_login_at?: string; two_factor_enabled?: boolean
+}
+type Counts = { leads?: number; rfps?: number; drafts?: number }
+type PageProps = { auth?: { user?: User | null }, adminCounts?: Counts, csrf_token?: string }
 
+/* ---------- Page / user ---------- */
 const page   = usePage<PageProps>()
-const user   = computed(()=> page.props.auth?.user ?? null)
-const counts = computed<Counts>(()=> page.props.adminCounts ?? { leads:0, rfps:0, drafts:0 })
+const user   = computed<User | null>(() => page.props.auth?.user ?? null)
+const counts = computed<Counts>(() => page.props.adminCounts ?? { leads:0, rfps:0, drafts:0 })
 
-const userName  = computed(()=> user.value?.name  || 'Compte')
-const userEmail = computed(()=> user.value?.email || '')
-const has = (role:string)=> !!user.value?.roles?.includes(role)
-const can = (perm:string)=> !!user.value?.permissions?.includes(perm)
+const userName  = computed(() => user.value?.name  || 'Compte')
+const userEmail = computed(() => user.value?.email || '')
 
-/* Ziggy */
+const has = (role:string) => !!user.value?.roles?.includes(role)
+const can = (perm:string) => !!user.value?.permissions?.includes(perm)
+
+/* ---------- Ziggy helpers ---------- */
 const Zig = computed<any|undefined>(() => (window as any)?.Ziggy)
-/* >>> PLUS DE FILTRE: on calcule toujours l'URL, et on fallback sur '#' si erreur */
-function hrefSafe(name:string, params?:any, absolute=false): string {
+function hrefSafe(name: string, params?: any, absolute = false): string {
   try { return ziggyRoute(name, params ?? {}, absolute, Zig.value) } catch { return '#' }
 }
 
-/* UI */
-const sidebarOpen    = ref(true)
-const sidebarCompact = ref(false)
-onMounted(()=> {
+/* ---------- UI state ---------- */
+const sidebarOpen    = ref(true)   // mobile visible
+const sidebarCompact = ref(false)  // desktop compact
+onMounted(() => {
   sidebarOpen.value    = (localStorage.getItem('bko.sb')   ?? '1') === '1'
   sidebarCompact.value = (localStorage.getItem('bko.sb.c') ?? '0') === '1'
 })
-watch(sidebarOpen,    v=> localStorage.setItem('bko.sb',   v?'1':'0'))
-watch(sidebarCompact, v=> localStorage.setItem('bko.sb.c', v?'1':'0'))
+watch(sidebarOpen,    v => localStorage.setItem('bko.sb',   v ? '1' : '0'))
+watch(sidebarCompact, v => localStorage.setItem('bko.sb.c', v ? '1' : '0'))
 
-/* Online */
+/* Fermer le menu latéral en mobile après clic */
+function onNav() {
+  if (window.innerWidth < 768) sidebarOpen.value = false
+}
+
+/* Online indicator */
 const online = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
-const onOnline=()=> online.value=true, onOffline=()=> online.value=false
+const onOnline  = ()=> online.value = true
+const onOffline = ()=> online.value = false
 onMounted(()=>{ addEventListener('online', onOnline); addEventListener('offline', onOffline) })
 onBeforeUnmount(()=>{ removeEventListener('online', onOnline); removeEventListener('offline', onOffline) })
 
-/* Actif */
-const currentUrl = computed(()=> page.url || '')
-const isActive = (prefixes:string[]) => prefixes.some(p => currentUrl.value.startsWith(p.startsWith('/')?p:`/${p}`))
+/* Active helper — dashboard exact, le reste par préfixes */
+const currentUrl = computed(() => page.url || '')
+function isActiveExact(path: string) {
+  return currentUrl.value === path || currentUrl.value === `${path}/`
+}
+function isActivePrefix(prefixes: string[]) {
+  return prefixes.some(seg => currentUrl.value.startsWith(seg.startsWith('/') ? seg : `/${seg}`))
+}
 
-/* Icônes */
+/* ---------- Icônes (paths) ---------- */
 const icons = {
   dash:'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
   projects:'M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h12v2H3v-2z',
@@ -57,12 +73,15 @@ const icons = {
   search:'M10 2a8 8 0 1 0 5.29 14.29l4.21 4.21l1.41-1.41l-4.21-4.21A8 8 0 0 0 10 2z',
 } as const
 type IconKey = keyof typeof icons
-const iconPath = (k:IconKey) => icons[k] ?? icons.dash
+function iconPath(k: IconKey): string { return icons[k] ?? icons.dash }
 
-/* Menu (sans filtre Ziggy) */
-type Item = { label:string; icon:IconKey; route:string; activeOn:string[]; enabled:boolean; badge?:()=>number }
+/* ---------- Menu ---------- */
+type Item = {
+  label:string; icon:IconKey; route:string;
+  activeOn:string[]; enabled:boolean; exact?:boolean; badge?:()=>number
+}
 const items = computed<Item[]>(() => [
-  { label:'Tableau de bord',  icon:'dash',     route:'admin.dashboard',        activeOn:['/admin'],           enabled:true },
+  { label:'Tableau de bord',  icon:'dash',     route:'admin.dashboard',        activeOn:['/admin'],           enabled:true, exact:true },
   { label:'Réalisations',     icon:'projects', route:'admin.projects.index',   activeOn:['/admin/projects'],  enabled: can('projects.view') || has('admin') },
   { label:'Devis & leads',    icon:'quotes',   route:'admin.quotes.index',     activeOn:['/admin/quotes'],    enabled: can('quotes.view')  || has('admin'), badge:()=>counts.value.leads  ?? 0 },
   { label:'Appels d’offres',  icon:'rfps',     route:'admin.rfps.index',       activeOn:['/admin/rfps'],      enabled: can('rfps.view')    || has('admin'), badge:()=>counts.value.rfps   ?? 0 },
@@ -73,7 +92,12 @@ const items = computed<Item[]>(() => [
   { label:'Paramètres',       icon:'settings', route:'admin.settings.index',   activeOn:['/admin/settings'],  enabled: has('admin') },
 ])
 
-/* Palette */
+/* Calcul actif pour un item */
+function itemIsActive(it: Item): boolean {
+  return it.exact ? isActiveExact('/admin') : isActivePrefix(it.activeOn)
+}
+
+/* ---------- Palette (⌘/Ctrl K) ---------- */
 const paletteOpen = ref(false)
 const paletteQ    = ref('')
 const paletteList = computed(() =>
@@ -83,6 +107,10 @@ const paletteList = computed(() =>
 )
 function openPalette(){ paletteOpen.value = true; requestAnimationFrame(()=> (document.getElementById('cmdk') as HTMLInputElement)?.focus()) }
 function goRoute(name:string){ router.visit(hrefSafe(name)); paletteOpen.value=false; paletteQ.value='' }
+
+/* ---------- Compte: fermer après clic ---------- */
+const accountRef = ref<HTMLDetailsElement|null>(null)
+function closeAccount(){ if (accountRef.value) accountRef.value.open = false }
 
 const year = new Date().getFullYear()
 </script>
@@ -98,43 +126,59 @@ const year = new Date().getFullYear()
         sidebarCompact ? 'w-20' : 'w-72'
       ]"
     >
+      <!-- Brand -->
       <div class="flex items-center justify-between h-12 px-2">
         <div class="flex items-center gap-2">
           <img src="/assets/logo-bk.jpeg" class="h-8 w-auto object-contain" alt="BKO Construction" />
           <div v-if="!sidebarCompact" class="font-display text-xl">BKO <span class="text-bk-gold">Construction</span></div>
         </div>
-        <button type="button" class="hidden md:inline-flex items-center gap-1 text-xs rounded-md px-2 py-1 bg-white/10 ring-1 ring-white/15 hover:ring-bk-gold/50"
-                :title="sidebarCompact ? 'Étendre' : 'Réduire'" @click="sidebarCompact=!sidebarCompact">
+        <button type="button"
+                class="hidden md:inline-flex items-center gap-1 text-xs rounded-md px-2 py-1 bg-white/10 ring-1 ring-white/15 hover:ring-bk-gold/50"
+                :title="sidebarCompact ? 'Étendre' : 'Réduire'"
+                @click="sidebarCompact=!sidebarCompact">
           <svg viewBox="0 0 24 24" width="14" height="14"><path :d="icons.dash" fill="currentColor"/></svg>
           <span v-if="!sidebarCompact">Réduire</span>
         </button>
       </div>
 
+      <!-- Online -->
       <div class="px-2 text-[11px] text-white/60 flex items-center gap-2">
         <span :class="['inline-block w-2 h-2 rounded-full', online ? 'bg-emerald-400' : 'bg-red-400']"></span>
         <span v-if="!sidebarCompact">{{ online ? 'En ligne' : 'Hors ligne' }}</span>
       </div>
 
+      <!-- Menu -->
       <nav class="mt-4 space-y-1 text-sm">
         <div v-for="it in items" :key="it.route" v-show="it.enabled" class="group relative">
-          <Link :href="hrefSafe(it.route)" prefetch
-                :aria-current="isActive(it.activeOn) ? 'page' : undefined"
-                :class="[
-                  'flex items-center gap-3 px-3 py-2 rounded-lg transition',
-                  isActive(it.activeOn) ? 'bg-bk-gold text-bk-night shadow-[0_18px_38px_-18px_rgba(220,193,118,.60)]'
-                                        : 'hover:bg-white/10'
-                ]">
+          <Link
+            :href="hrefSafe(it.route)"
+            prefetch
+            @click="onNav"
+            :aria-current="itemIsActive(it) ? 'page' : undefined"
+            :class="[
+              'flex items-center gap-3 px-3 py-2 rounded-lg transition',
+              itemIsActive(it) ? 'bg-bk-gold text-bk-night shadow-[0_18px_38px_-18px_rgba(220,193,118,.60)]'
+                               : 'hover:bg-white/10'
+            ]"
+          >
             <span class="inline-flex w-6 justify-center">
-              <svg viewBox="0 0 24 24" width="18" height="18"><path :d="iconPath(it.icon)" fill="currentColor"/></svg>
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path :d="iconPath(it.icon)" fill="currentColor"/>
+              </svg>
             </span>
             <span v-if="!sidebarCompact" class="flex-1 truncate">{{ it.label }}</span>
-            <span v-if="it.badge && !sidebarCompact" class="ml-auto inline-flex items-center justify-center px-2 h-5 rounded bg-bk-gold/20 text-bk-gold text-xs font-semibold">
+            <span v-if="it.badge && !sidebarCompact"
+                  class="ml-auto inline-flex items-center justify-center px-2 h-5 rounded bg-bk-gold/20 text-bk-gold text-xs font-semibold">
               {{ it.badge() }}
             </span>
           </Link>
+
+          <!-- Tooltip en mode compact -->
           <div v-if="sidebarCompact"
                class="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition
-                      bg-[#0f141a]/95 ring-1 ring-white/15 rounded-md px-2 py-1 text-xs whitespace-nowrap">{{ it.label }}</div>
+                      bg-[#0f141a]/95 ring-1 ring-white/15 rounded-md px-2 py-1 text-xs whitespace-nowrap">
+            {{ it.label }}
+          </div>
         </div>
       </nav>
 
@@ -148,6 +192,7 @@ const year = new Date().getFullYear()
           <svg viewBox="0 0 24 24" width="20" height="20"><path :d="icons.dash" fill="currentColor"/></svg>
         </button>
 
+        <!-- barre recherche (ouvre palette) -->
         <div class="relative hidden sm:block ml-1" @click="openPalette">
           <input id="hdr-search" readonly placeholder="Rechercher (⌘/Ctrl K)"
                  class="h-9 w-[280px] rounded-lg bg-white/[.06] ring-1 ring-white/10 pl-8 pr-3 text-sm outline-none cursor-text">
@@ -156,8 +201,9 @@ const year = new Date().getFullYear()
           </span>
         </div>
 
+        <!-- Compte (droite) -->
         <div class="ml-auto px-4 relative">
-          <details class="group">
+          <details class="group" ref="accountRef">
             <summary class="list-none flex items-center gap-3 cursor-pointer select-none">
               <div class="text-right hidden sm:block">
                 <div class="text-sm font-semibold truncate max-w-[180px]">{{ userName }}</div>
@@ -168,44 +214,57 @@ const year = new Date().getFullYear()
               </div>
             </summary>
 
+            <!-- Menu compte -->
             <div class="absolute right-4 mt-2 w-[320px] rounded-xl bg-[#0f141a]/95 ring-1 ring-white/15 backdrop-blur shadow-2xl p-2">
               <div class="px-3 py-2">
                 <div class="text-sm font-semibold">{{ userName }}</div>
                 <div class="text-xs text-white/60">{{ userEmail }}</div>
                 <div class="mt-2 flex flex-wrap gap-1">
-                  <span v-for="r in (user?.roles || [])" :key="r" class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] uppercase tracking-wide">{{ r }}</span>
+                  <span v-for="r in (user?.roles || [])" :key="r"
+                        class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] uppercase tracking-wide">{{ r }}</span>
                   <span v-if="user?.two_factor_enabled" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px]">2FA ON</span>
                 </div>
-                <div v-if="user?.last_login_at" class="mt-1 text-[11px] text-white/45">Dernière connexion : {{ user?.last_login_at }}</div>
+                <div v-if="user?.last_login_at" class="mt-1 text-[11px] text-white/45">
+                  Dernière connexion : {{ user?.last_login_at }}
+                </div>
               </div>
 
               <div class="my-1 h-px bg-white/10"></div>
 
-              <Link :href="hrefSafe('admin.account.security')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
+              <Link :href="hrefSafe('admin.account.security')" @click="closeAccount"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.security" fill="currentColor"/></svg>
                 Compte & sécurité
               </Link>
-              <Link v-if="can('cms.manage') || has('admin')" :href="hrefSafe('admin.posts.index')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
+
+              <Link v-if="can('cms.manage') || has('admin')" :href="hrefSafe('admin.posts.index')" @click="closeAccount"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.posts" fill="currentColor"/></svg>
                 Actualités ({{ counts.drafts ?? 0 }})
               </Link>
-              <Link v-if="can('projects.create') || has('admin')" :href="hrefSafe('admin.projects.create')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
+
+              <Link v-if="can('projects.create') || has('admin')" :href="hrefSafe('admin.projects.create')" @click="closeAccount"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.projects" fill="currentColor"/></svg>
                 Nouveau projet
               </Link>
-              <Link :href="hrefSafe('home')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
+
+              <Link :href="hrefSafe('home')" @click="closeAccount"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.dash" fill="currentColor"/></svg>
                 Voir le site
               </Link>
 
-              <button type="button" class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" @click="openPalette">
+              <button type="button" class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10"
+                      @click="openPalette">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.search" fill="currentColor"/></svg>
                 Palette de commandes <span class="ml-auto text-[11px] text-white/50">⌘/Ctrl K</span>
               </button>
 
               <div class="my-1 h-px bg-white/10"></div>
 
-              <button type="button" class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10" @click="router.post(hrefSafe('logout'))">
+              <button type="button" class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10"
+                      @click="router.post(hrefSafe('logout'))">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.settings" fill="currentColor"/></svg>
                 Déconnexion
               </button>
@@ -226,10 +285,12 @@ const year = new Date().getFullYear()
           <div class="relative">
             <input id="cmdk" v-model="paletteQ" placeholder="Aller à… — ESC pour fermer"
                    class="w-full h-12 bg-transparent px-4 pr-12 outline-none text-sm placeholder:text-white/50">
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" @click="paletteOpen=false">✕</button>
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                    @click="paletteOpen=false">✕</button>
           </div>
           <div class="max-h-80 overflow-y-auto divide-y divide-white/10">
-            <button v-for="i in paletteList" :key="i.route" type="button" class="w-full px-4 py-2.5 text-left hover:bg-white/5 flex items-center gap-3"
+            <button v-for="i in paletteList" :key="i.route" type="button"
+                    class="w-full px-4 py-2.5 text-left hover:bg-white/5 flex items-center gap-3"
                     @click="goRoute(i.route)">
               <svg viewBox="0 0 24 24" width="16" height="16"><path :d="iconPath(i.icon)" fill="currentColor"/></svg>
               <span class="text-sm">{{ i.label }}</span>
