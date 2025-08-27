@@ -4,7 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 import { route as ziggyRoute } from 'ziggy-js'
 
-/* -------------------- Helper routes : robuste, sans crash -------------------- */
+/* -------------------- Helper route robuste (Ziggy + fallback) -------------------- */
 function r(name: string, params?: any, absolute = false, fallback: string = '#') {
   try {
     const Z = (globalThis as any)?.Ziggy
@@ -17,7 +17,10 @@ function r(name: string, params?: any, absolute = false, fallback: string = '#')
 
 /* -------------------- Types & props dynamiques -------------------- */
 type MediaItem = { type:'image'|'video', kind?:'upload'|'url', path?:string|null, url?:string|null }
-type Project   = { id:number; title:string; slug?:string|null; city?:string|null; category?:string|null; status:'brouillon'|'publié'; cover_image?:string|null; media?:MediaItem[] }
+type Project   = {
+  id:number; title:string; slug?:string|null; city?:string|null; category?:string|null;
+  status:'brouillon'|'publié'; cover_image?:string|null; media?:MediaItem[]; client?:string|null; company?:string|null
+}
 type Post      = { id:number; title:string; slug?:string|null; excerpt?:string|null; cover_image?:string|null; published_at?:string|null }
 
 const props = defineProps<{
@@ -31,19 +34,17 @@ const heroList = computed<Project[]>(() => props.heroProjects ?? [])
 const gridList = computed<Project[]>(() => props.projects ?? [])
 const postList = computed<Post[]>(() => props.posts ?? [])
 
-/* ---------- Tilt 3D ---------- */
-function handleTilt(e: MouseEvent) {
-  const el = e.currentTarget as HTMLElement | null; if (!el) return
-  const rct = el.getBoundingClientRect()
-  const cx = (e.clientX - rct.left) / rct.width - 0.5
-  const cy = (e.clientY - rct.top) / rct.height - 0.5
-  el.style.setProperty('--rx', (-cy * 10).toFixed(2) + 'deg')
-  el.style.setProperty('--ry', (cx * 10).toFixed(2) + 'deg')
-}
-function resetTilt(e: MouseEvent) {
-  const el = e.currentTarget as HTMLElement | null; if (!el) return
-  el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg')
-}
+/* --------- Partenaires (Avanza + Biocarb Bamako + clients dynamiques) --------- */
+const partnerList = computed(() => {
+  const base = ['Avanza', 'Biocarb Bamako']
+  const baseLower = base.map(s => s.toLowerCase())
+  const seen = new Set<string>()
+  ;[...heroList.value, ...gridList.value].forEach(p => {
+    const n = (p?.client || p?.company || '').toString().trim()
+    if (n && !baseLower.includes(n.toLowerCase())) seen.add(n)
+  })
+  return [...base, ...Array.from(seen)]
+})
 
 /* ---------- v-reveal ---------- */
 let io: IntersectionObserver | null = null
@@ -85,13 +86,21 @@ const vCountup = {
   }
 }
 
-/* ---------- état ---------- */
-const showAllRefs = ref(false)
-function focusDevis() {
-  (document.getElementById('devis-name') as HTMLInputElement | null)?.focus()
+/* ---------- Tilt 3D (services) ---------- */
+function handleTilt(e: MouseEvent) {
+  const el = e.currentTarget as HTMLElement | null; if (!el) return
+  const rct = el.getBoundingClientRect()
+  const cx = (e.clientX - rct.left) / rct.width - 0.5
+  const cy = (e.clientY - rct.top) / rct.height - 0.5
+  el.style.setProperty('--rx', (-cy * 10).toFixed(2) + 'deg')
+  el.style.setProperty('--ry', (cx * 10).toFixed(2) + 'deg')
+}
+function resetTilt(e: MouseEvent) {
+  const el = e.currentTarget as HTMLElement | null; if (!el) return
+  el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg')
 }
 
-/* ---------- Form “Devis express” (public) ---------- */
+/* ---------- Devis express (public) ---------- */
 const qForm = useForm({
   name: '', company: '', email: '', phone: '',
   city: '', project_type: '', budget: '',
@@ -107,6 +116,7 @@ function submitQuote() {
     onSuccess: () => qForm.reset('message', 'files'),
   })
 }
+function focusDevis() { (document.getElementById('devis-name') as HTMLInputElement | null)?.focus() }
 
 /* ---------- Utils ---------- */
 const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'numeric', month:'short', day:'2-digit' }) : '—'
@@ -149,7 +159,7 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
               <div class="iso-card" style="left:36%; bottom:16%; --h:95px;  --w:125px; --z:24;"></div>
               <div class="iso-card" style="left:58%; bottom:28%; --h:74px;  --w:105px; --z:36;"></div>
             </div>
-            <!-- grue SVG (inchangé) -->
+            <!-- grue SVG -->
             <svg class="crane" viewBox="0 0 520 260" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
               <g stroke-linecap="round" stroke-linejoin="round">
                 <path class="text-white/70" d="M60 240V70M60 70L40 40M60 70L80 40M60 120L40 90M60 120L80 90M60 170L40 140M60 170L80 140" />
@@ -214,14 +224,15 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
       </div>
     </section>
 
-    <!-- ================= PARTENAIRES ================= -->
+    <!-- ================= PARTENAIRES (Avanza, Biocarb + clients dynamiques) ================= -->
     <section class="py-6">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="section-title" v-reveal>Ils nous font confiance</h2>
         <div class="marquee mt-5" v-reveal>
           <div class="marquee-track">
-            <span class="logo-pill">ONCF</span><span class="logo-pill">ADM</span><span class="logo-pill">INDUSTRIA</span><span class="logo-pill">LOGIPARK</span><span class="logo-pill">URBA</span><span class="logo-pill">IMMOPRO</span><span class="logo-pill">CITYDEV</span><span class="logo-pill">PORT AUTH</span><span class="logo-pill">AGROTECH</span>
-            <span class="logo-pill">ONCF</span><span class="logo-pill">ADM</span><span class="logo-pill">INDUSTRIA</span><span class="logo-pill">LOGIPARK</span><span class="logo-pill">URBA</span><span class="logo-pill">IMMOPRO</span><span class="logo-pill">CITYDEV</span><span class="logo-pill">PORT AUTH</span><span class="logo-pill">AGROTECH</span>
+            <span v-for="(n,i) in partnerList" :key="'p1-'+i" class="logo-pill">{{ n }}</span>
+            <!-- duplication pour effet continu -->
+            <span v-for="(n,i) in partnerList" :key="'p2-'+i" class="logo-pill">{{ n }}</span>
           </div>
         </div>
       </div>
@@ -272,7 +283,7 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
       </div>
     </section>
 
-    <!-- ================= RÉALISATIONS ================= -->
+    <!-- ================= RÉALISATIONS (UNIQUE bloc : carrousel + CTA) ================= -->
     <section id="projects" class="py-10 md:py-14">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="section-title" v-reveal>Réalisations</h2>
@@ -280,46 +291,28 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
         <!-- carrousel -->
         <div class="mt-8 overflow-x-auto no-scrollbar" v-reveal>
           <div class="flex gap-6 snap-x snap-mandatory scroll-pl-4">
-            <div v-for="p in heroList" :key="p.id" class="ref-card snap-start group">
-              <div class="grain" aria-hidden="true"></div>
-              <img v-if="p.cover_image" :src="`/storage/${p.cover_image}`" class="absolute inset-0 w-full h-full object-cover opacity-[.88]" alt="" loading="lazy" />
-              <div class="ref-caption">
-                <div class="font-bold">{{ p.title }}</div>
-                <div class="text-white/70 text-sm">{{ p.category || '—' }}<span v-if="p.city"> — {{ p.city }}</span></div>
+            <Link v-for="p in heroList" :key="p.id"
+                  :href="r('public.projects.show', p.slug ?? p.id, false, `/realisations/${p.slug ?? p.id}`)"
+                  class="proj-card snap-start group">
+              <div class="proj-media">
+                <img v-if="p.cover_image" :src="`/storage/${p.cover_image}`" :alt="p.title" loading="lazy">
+                <div v-else class="skeleton"></div>
               </div>
-              <div class="ref-overlay">
-                <Link :href="r('public.projects.show', p.slug ?? p.id, false, `/realisations/${p.slug ?? p.id}`)" class="btn-outline-gold">Détails du projet</Link>
+              <div class="proj-grad"></div>
+              <div class="proj-meta">
+                <span class="pill">{{ p.category || 'Projet' }}</span>
+                <h3 class="proj-title">{{ p.title }}</h3>
+                <div class="proj-sub">{{ [p.category, p.city].filter(Boolean).join(' · ') }}</div>
               </div>
-            </div>
+              <div class="proj-cta"><span class="btn-outline-gold">Détails du projet</span></div>
+              <div class="shine"></div>
+            </Link>
           </div>
         </div>
 
-        <!-- CTA voir toutes -->
-        <div class="mt-6 flex justify-center">
-          <Link :href="r('public.projects.index', {}, false, '/realisations')" class="btn-ghost">Voir toutes les réalisations</Link>
-        </div>
-
-        <!-- grille aperçue -->
-        <transition name="fade">
-          <div v-if="showAllRefs" class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <div v-for="p in gridList" :key="p.id" class="ref-card group h-[260px] md:h-[300px]">
-              <div class="grain" aria-hidden="true"></div>
-              <img v-if="p.cover_image" :src="`/storage/${p.cover_image}`" class="absolute inset-0 w-full h-full object-cover opacity-[.88]" alt="" loading="lazy" />
-              <div class="ref-caption">
-                <div class="font-bold">{{ p.title }}</div>
-                <div class="text-white/70 text-sm">{{ p.category || '—' }}<span v-if="p.city"> — {{ p.city }}</span></div>
-              </div>
-              <div class="ref-overlay">
-                <Link :href="r('public.projects.show', p.slug ?? p.id, false, `/realisations/${p.slug ?? p.id}`)" class="btn-outline-gold">Fiche projet</Link>
-              </div>
-            </div>
-          </div>
-        </transition>
-
-        <div class="mt-4 flex justify-center">
-          <button class="btn-ghost" @click="showAllRefs = !showAllRefs">
-            {{ showAllRefs ? 'Masquer l’aperçu' : 'Voir un aperçu grille' }}
-          </button>
+        <!-- CTA Voir toutes (pas de seconde grille ici) -->
+        <div class="mt-7 flex justify-center">
+          <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Toutes les réalisations</Link>
         </div>
       </div>
     </section>
@@ -384,21 +377,43 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
         <h2 class="section-title" v-reveal>Actualités</h2>
 
         <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <article v-for="a in postList" :key="a.id" class="news-card ring-gold" v-reveal>
-            <div class="news-thumb">
-              <img v-if="a.cover_image" :src="`/storage/${a.cover_image}`" class="w-full h-full object-cover" alt="" loading="lazy" />
+          <!-- À la une -->
+          <Link v-if="postList[0]"
+                :href="r('public.posts.show', postList[0].slug ?? postList[0].id, false, `/actualites/${postList[0].slug ?? postList[0].id}`)"
+                class="news-feature group sm:col-span-2">
+            <div class="news-media">
+              <img v-if="postList[0].cover_image" :src="`/storage/${postList[0].cover_image}`" :alt="postList[0].title" loading="lazy">
+              <div v-else class="skeleton"></div>
+            </div>
+            <div class="news-grad"></div>
+            <div class="news-meta">
+              <span class="pill pill-light">À la une</span>
+              <h3 class="news-title lg:text-3xl">{{ postList[0].title }}</h3>
+              <p v-if="postList[0].excerpt" class="news-excerpt line-clamp-2">{{ postList[0].excerpt }}</p>
+              <span class="btn-outline-gold mt-3">Lire l’article</span>
+            </div>
+            <div class="shine"></div>
+          </Link>
+
+          <!-- Autres -->
+          <Link v-for="a in postList.slice(1)" :key="a.id"
+                :href="r('public.posts.show', a.slug ?? a.id, false, `/actualites/${a.slug ?? a.id}`)"
+                class="news-card v2 group">
+            <div class="news-media h-40">
+              <img v-if="a.cover_image" :src="`/storage/${a.cover_image}`" :alt="a.title" loading="lazy">
+              <div v-else class="skeleton"></div>
             </div>
             <div class="news-body">
               <h3 class="news-title">{{ a.title }}</h3>
-              <p class="news-excerpt">{{ a.excerpt || '—' }}</p>
-              <div class="text-xs text-white/60 mt-1">{{ fmt(a.published_at || undefined) }}</div>
-              <Link :href="r('public.posts.show', a.slug ?? a.id, false, `/actualites/${a.slug ?? a.id}`)" class="btn-ghost mt-3 inline-flex">Lire</Link>
+              <p v-if="a.excerpt" class="news-excerpt line-clamp-2">{{ a.excerpt }}</p>
+              <div class="news-date">{{ fmt(a.published_at || undefined) }}</div>
             </div>
-          </article>
+            <div class="shine"></div>
+          </Link>
         </div>
 
-        <div class="mt-6 flex justify-center">
-          <Link :href="r('public.posts.index', {}, false, '/actualites')" class="btn-outline-gold">Toutes les actualités</Link>
+        <div class="mt-7 flex justify-center">
+          <Link :href="r('public.posts', {}, false, '/actualites')" class="btn-outline-gold">Toutes les actualités</Link>
         </div>
       </div>
     </section>
@@ -487,7 +502,7 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
 @keyframes trolley{ from{ transform: translateX(40px) } to{ transform: translateX(160px) } }
 @keyframes hook{ from{ transform: translateY(0) } to{ transform: translateY(8px) } }
 
-/* services */
+/* services 3D */
 .card-iso{ transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)); transition: transform .15s ease-out, box-shadow .2s ease; box-shadow:0 40px 120px -40px rgba(0,0,0,.55); border-radius:1rem; padding:1.1rem 1.2rem 1.2rem; background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(21,30,39,.55)); border:1px solid rgba(255,255,255,.12) }
 .illus{ height:120px; position:relative; margin-top:.1rem }
 .iso-vrd .b1,.iso-vrd .b2,.iso-vrd .b3{ position:absolute; border-radius:10px; transform: rotateX(55deg) rotateZ(-12deg); background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(21,30,39,.55)); border:1px solid rgba(255,255,255,.14) }
@@ -497,35 +512,71 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year:'
 .iso-gc .dam,.iso-gc .pipe{ position:absolute; transform: rotateX(55deg) rotateZ(-12deg); background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(21,30,39,.55)); border:1px solid rgba(255,255,255,.14); border-radius:10px }
 .iso-gc .dam{ width:120px; height:28px; left:10%; bottom:18% } .iso-gc .pipe{ width:26px; height:26px; left:66%; bottom:34%; border-radius:999px }
 
-/* expertise etc. (inchangé) */
-.expert{ padding:1rem; border-radius:1rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); text-align:center }
-.expert-title{ font-weight:800; margin-top:.35rem } .expert-text{ color:rgba(253,253,254,.78); margin-top:.2rem; font-size:.95rem }
-.icon-iso{ width:58px; height:58px; margin:0 auto; position:relative; filter: drop-shadow(0 12px 30px rgba(0,0,0,.35)) }
+/* Projets premium */
+.proj-card{
+  position:relative; width:360px; height:230px; overflow:hidden; border-radius:1.1rem;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+  transform:translateZ(0); transition:transform .25s ease, box-shadow .25s ease;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.55);
+}
+@media (min-width:768px){ .proj-card{ width:520px; height:320px } }
+.proj-card:hover{ transform: translateY(-4px); box-shadow:0 50px 140px -50px rgba(0,0,0,.7) }
+.proj-media, .proj-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+.proj-grad{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,20,26,.0) 30%, rgba(15,20,26,.85)); }
+.proj-meta{ position:absolute; left:0; right:0; bottom:0; padding:1rem; z-index:2 }
+.proj-title{ font-weight:800; font-size:1.05rem; letter-spacing:.2px }
+.proj-sub{ color:rgba(253,253,254,.72); font-size:.9rem; margin-top:.15rem }
+.proj-cta{ position:absolute; inset:0; display:grid; place-items:center; opacity:0; transition:opacity .2s ease; z-index:2 }
+.proj-card:hover .proj-cta{ opacity:1 }
+.pill{ display:inline-flex; align-items:center; gap:.35rem; padding:.28rem .55rem; margin-bottom:.4rem;
+  border-radius:.6rem; font-weight:700; font-size:.72rem; color:#0f141a;
+  background:linear-gradient(90deg,#dcc176,#f3e8c1); box-shadow:0 10px 24px -14px rgba(220,193,118,.8)
+}
 
-/* refs */
-.ref-card{ position:relative; width:360px; height:230px; border-radius:1rem; overflow:hidden; border:1px solid rgba(255,255,255,.12); background: radial-gradient(60% 60% at 30% 30%, rgba(220,193,118,.14), transparent 60%) }
-@media (min-width:768px){ .ref-card{ width:520px; height:320px } }
-.ref-caption{ position:absolute; left:0; right:0; bottom:0; padding:1rem; background: linear-gradient(180deg, rgba(15,20,26,.85), transparent 80%) }
-.ref-overlay{ position:absolute; inset:0; display:grid; place-items:center; background: rgba(0,0,0,.35); opacity:0; transition: opacity .25s ease }
-.ref-card:hover .ref-overlay{ opacity:1 }
-.grain{ position:absolute; inset:0; opacity:.12; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='a'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)' opacity='.25'/%3E%3C/svg%3E") }
+/* Actualités premium */
+.news-feature{
+  position:relative; overflow:hidden; border-radius:1.1rem; border:1px solid rgba(255,255,255,.12);
+  min-height:280px; background:rgba(255,255,255,.06); display:block; transform:translateZ(0);
+  transition:transform .25s ease, box-shadow .25s ease; box-shadow:0 40px 120px -40px rgba(0,0,0,.55)
+}
+@media (min-width:1024px){ .news-feature{ min-height:360px } }
+.news-feature:hover{ transform: translateY(-4px); box-shadow:0 50px 140px -50px rgba(0,0,0,.7) }
+.news-card.v2{
+  position:relative; overflow:hidden; border-radius:1.1rem; border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06); display:block; transform:translateZ(0);
+  transition:transform .25s ease, box-shadow .25s ease; box-shadow:0 40px 120px -40px rgba(0,0,0,.55)
+}
+.news-card.v2:hover{ transform: translateY(-4px); box-shadow:0 50px 140px -50px rgba(0,0,0,.7) }
+.news-media, .news-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+.news-media{ position:relative }
+.news-grad{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,20,26,.0) 25%, rgba(15,20,26,.88)) }
+.news-meta{ position:absolute; left:0; right:0; bottom:0; padding:1rem 1.1rem 1.2rem }
+.news-title{ font-weight:800; letter-spacing:.2px }
+.news-excerpt{ color:rgba(253,253,254,.78); margin-top:.25rem }
+.news-date{ color:rgba(253,253,254,.65); font-size:.85rem; margin-top:.35rem }
+.pill-light{ color:#0f141a; background:linear-gradient(90deg,#fff,#f6f6f7) }
+
+/* Skeleton */
+.skeleton{
+  position:absolute; inset:0; background:
+    linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
+  background-size:200% 100%; animation: sk 1.6s linear infinite; border-radius:inherit;
+}
+@keyframes sk { from{ background-position: 200% 0 } to{ background-position: -200% 0 } }
 
 /* jauges */
-.radial{ --val:92; width:72px; height:72px; border-radius:999px; display:grid; place-items:center; background:conic-gradient(#dcc176 calc(var(--val)*1%), rgba(255,255,255,.2) 0), radial-gradient(farthest-side, rgba(21,30,39,1) 60%, transparent 61%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); color:#fdfdfe; font-weight:800 }
-.radial.small{ width:54px; height:54px } .radial.ok{ background: conic-gradient(#62d47b calc(var(--val)*1%), rgba(255,255,255,.2) 0), radial-gradient(farthest-side, rgba(21,30,39,1) 60%, transparent 61%) }
+.radial{ --val:92; width:72px; height:72px; border-radius:999px; display:grid; place-items:center;
+  background:conic-gradient(#dcc176 calc(var(--val)*1%), rgba(255,255,255,.2) 0),
+             radial-gradient(farthest-side, rgba(21,30,39,1) 60%, transparent 61%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); color:#fdfdfe; font-weight:800 }
 
-/* marquee */
+/* marquee (partenaires) */
 .marquee{ position:relative; overflow:hidden; mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent) }
 .marquee-track{ display:flex; align-items:center; gap:2.25rem; padding:.25rem 0; animation: marquee 22s linear infinite; opacity:.9 }
 .marquee:hover .marquee-track{ animation-play-state: paused }
 @keyframes marquee{ from{ transform: translateX(0) } to{ transform: translateX(-50%) } }
 @media (prefers-reduced-motion: reduce){ .marquee-track{ animation: none } }
 .logo-pill{ display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1.1rem; border-radius:.8rem; font-weight:800; letter-spacing:.3px; color:#fdfdfe; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12) }
-
-/* news */
-.news-card{ overflow:hidden; border-radius:1rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12) }
-.news-thumb{ height:140px; background: radial-gradient(60% 60% at 30% 30%, rgba(220,193,118,.2), transparent 60%) }
-.news-body{ padding:1rem } .news-title{ font-weight:800 } .news-excerpt{ color:rgba(253,253,254,.78); margin-top:.15rem }
 
 /* icônes contact */
 .i{ width:18px; height:18px; display:inline-block; border-radius:5px; background: rgba(255,255,255,.12) }

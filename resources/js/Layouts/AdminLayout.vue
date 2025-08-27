@@ -8,13 +8,18 @@ type User = {
   name?: string; email?: string; roles?: string[]; permissions?: string[];
   last_login_at?: string; two_factor_enabled?: boolean
 }
-type Counts = { leads?: number; rfps?: number; drafts?: number }
-type PageProps = { auth?: { user?: User | null }, adminCounts?: Counts, csrf_token?: string }
+type Counts = { leads?: number; drafts?: number }
+type PageProps = {
+  auth?: { user?: User | null },
+  adminCounts?: Counts,
+  csrf_token?: string,
+  url?: string
+}
 
 /* ---------- Page / user ---------- */
 const page   = usePage<PageProps>()
 const user   = computed<User | null>(() => page.props.auth?.user ?? null)
-const counts = computed<Counts>(() => page.props.adminCounts ?? { leads:0, rfps:0, drafts:0 })
+const counts = computed<Counts>(() => page.props.adminCounts ?? { leads:0, drafts:0 })
 
 const userName  = computed(() => user.value?.name  || 'Compte')
 const userEmail = computed(() => user.value?.email || '')
@@ -22,7 +27,7 @@ const userEmail = computed(() => user.value?.email || '')
 const has = (role:string) => !!user.value?.roles?.includes(role)
 const can = (perm:string) => !!user.value?.permissions?.includes(perm)
 
-/* ---------- Ziggy helpers ---------- */
+/* ---------- Ziggy helper robuste ---------- */
 const Zig = computed<any|undefined>(() => (window as any)?.Ziggy)
 function hrefSafe(name: string, params?: any, absolute = false): string {
   try { return ziggyRoute(name, params ?? {}, absolute, Zig.value) } catch { return '#' }
@@ -38,20 +43,19 @@ onMounted(() => {
 watch(sidebarOpen,    v => localStorage.setItem('bko.sb',   v ? '1' : '0'))
 watch(sidebarCompact, v => localStorage.setItem('bko.sb.c', v ? '1' : '0'))
 
-/* Fermer le menu latéral en mobile après clic */
-function onNav() {
-  if (window.innerWidth < 768) sidebarOpen.value = false
-}
+function onNav() { if (window.innerWidth < 768) sidebarOpen.value = false }
 
-/* Online indicator */
+/* ---------- Online indicator ---------- */
 const online = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
 const onOnline  = ()=> online.value = true
 const onOffline = ()=> online.value = false
 onMounted(()=>{ addEventListener('online', onOnline); addEventListener('offline', onOffline) })
 onBeforeUnmount(()=>{ removeEventListener('online', onOnline); removeEventListener('offline', onOffline) })
 
-/* Active helper — dashboard exact, le reste par préfixes */
-const currentUrl = computed(() => page.url || '')
+/* ---------- Active link helpers ---------- */
+const currentUrl = computed(() =>
+  (page as any).url || page.props.url || (typeof window !== 'undefined' ? window.location.pathname + window.location.search : '')
+)
 function isActiveExact(path: string) {
   return currentUrl.value === path || currentUrl.value === `${path}/`
 }
@@ -64,8 +68,6 @@ const icons = {
   dash:'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
   projects:'M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h12v2H3v-2z',
   quotes:'M21 6h-8l-2-2H3v16h18V6z',
-  rfps:'M19 3H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z',
-  contacts:'M12 12a5 5 0 1 0-5-5a5 5 0 0 0 5 5Zm-9 9a9 9 0 1 1 18 0H3z',
   posts:'M4 4h16v2H4V4zm0 5h16v2H4V9zm0 5h10v2H4v-2z',
   users:'M16 11a4 4 0 1 0-8 0a4 4 0 0 0 8 0zM4 20a8 8 0 1 1 16 0H4z',
   settings:'M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58l-1.92-3.32l-2.39.96a7.1 7.1 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.58.23-1.12.54-1.62.94l-2.39-.96L2.7 8.84l2.03 1.58a7.07 7.07 0 0 0 0 1.88L2.82 14.6l1.92 3.32l2.39-.96c.5.4 1.04.71 1.62.94l.36 2.54h3.84l.36-2.54c.58-.23 1.12-.54 1.62-.94l2.39.96l1.92-3.32l-2.03-1.66zM12 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6z',
@@ -75,24 +77,19 @@ const icons = {
 type IconKey = keyof typeof icons
 function iconPath(k: IconKey): string { return icons[k] ?? icons.dash }
 
-/* ---------- Menu ---------- */
+/* ---------- Menu (liens existants uniquement) ---------- */
 type Item = {
   label:string; icon:IconKey; route:string;
   activeOn:string[]; enabled:boolean; exact?:boolean; badge?:()=>number
 }
 const items = computed<Item[]>(() => [
-  { label:'Tableau de bord',  icon:'dash',     route:'admin.dashboard',        activeOn:['/admin'],           enabled:true, exact:true },
-  { label:'Réalisations',     icon:'projects', route:'admin.projects.index',   activeOn:['/admin/projects'],  enabled: can('projects.view') || has('admin') },
-  { label:'Devis & leads',    icon:'quotes',   route:'admin.quotes.index',     activeOn:['/admin/quotes'],    enabled: can('quotes.view')  || has('admin'), badge:()=>counts.value.leads  ?? 0 },
-  { label:'Appels d’offres',  icon:'rfps',     route:'admin.rfps.index',       activeOn:['/admin/rfps'],      enabled: can('rfps.view')    || has('admin'), badge:()=>counts.value.rfps   ?? 0 },
-  { label:'Contacts',         icon:'contacts', route:'admin.contacts.index',   activeOn:['/admin/contacts'],  enabled: can('contacts.view')|| has('admin') },
-  { label:'Actualités',       icon:'posts',    route:'admin.posts.index',      activeOn:['/admin/posts'],     enabled: can('cms.manage')   || has('admin'), badge:()=>counts.value.drafts ?? 0 },
-  { label:'Utilisateurs',     icon:'users',    route:'admin.users.index',      activeOn:['/admin/users'],     enabled: can('users.manage') || has('admin') },
-  { label:'Compte & sécurité',icon:'security', route:'admin.account.security', activeOn:['/admin/account'],   enabled:true },
-  { label:'Paramètres',       icon:'settings', route:'admin.settings.index',   activeOn:['/admin/settings'],  enabled: has('admin') },
+  { label:'Tableau de bord',  icon:'dash',     route:'admin.dashboard',      activeOn:['/admin'],          enabled:true, exact:true },
+  { label:'Réalisations',     icon:'projects', route:'admin.projects.index', activeOn:['/admin/projects'], enabled: can('projects.view') || has('admin') },
+  { label:'Devis & leads',    icon:'quotes',   route:'admin.quotes.index',   activeOn:['/admin/quotes'],   enabled: can('quotes.view')  || has('admin'), badge:()=>counts.value.leads  ?? 0 },
+  { label:'Actualités',       icon:'posts',    route:'admin.posts.index',    activeOn:['/admin/posts'],    enabled: can('cms.manage')   || has('admin'), badge:()=>counts.value.drafts ?? 0 },
+  { label:'Compte & sécurité',icon:'security', route:'admin.account.security',activeOn:['/admin/account'], enabled:true },
 ])
 
-/* Calcul actif pour un item */
 function itemIsActive(it: Item): boolean {
   return it.exact ? isActiveExact('/admin') : isActivePrefix(it.activeOn)
 }
@@ -105,12 +102,40 @@ const paletteList = computed(() =>
     .filter(i => i.enabled)
     .filter(i => i.label.toLowerCase().includes(paletteQ.value.toLowerCase()))
 )
-function openPalette(){ paletteOpen.value = true; requestAnimationFrame(()=> (document.getElementById('cmdk') as HTMLInputElement)?.focus()) }
-function goRoute(name:string){ router.visit(hrefSafe(name)); paletteOpen.value=false; paletteQ.value='' }
 
-/* ---------- Compte: fermer après clic ---------- */
+function openPalette(){
+  paletteOpen.value = true
+  requestAnimationFrame(()=> (document.getElementById('cmdk') as HTMLInputElement)?.focus())
+}
+function goRoute(name:string){
+  router.visit(hrefSafe(name))
+  paletteOpen.value = false
+  paletteQ.value = ''
+}
+function onKey(e: KeyboardEvent){
+  const meta = e.metaKey || e.ctrlKey
+  if (meta && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette() }
+  if (e.key === 'Escape') {
+    if (paletteOpen.value) paletteOpen.value = false
+    closeAccount()
+  }
+}
+
+/* ---------- Compte: fermer (clic extérieur + navigation + Esc) ---------- */
 const accountRef = ref<HTMLDetailsElement|null>(null)
 function closeAccount(){ if (accountRef.value) accountRef.value.open = false }
+function onDocClick(e: MouseEvent) {
+  if (accountRef.value && !accountRef.value.contains(e.target as Node)) closeAccount()
+}
+onMounted(() => {
+  document.addEventListener('click', onDocClick, { passive: true })
+  document.addEventListener('keydown', onKey)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocClick)
+  document.removeEventListener('keydown', onKey)
+})
+watch(() => (page as any).url, () => closeAccount())
 
 const year = new Date().getFullYear()
 </script>
@@ -126,16 +151,20 @@ const year = new Date().getFullYear()
         sidebarCompact ? 'w-20' : 'w-72'
       ]"
     >
-      <!-- Brand -->
+      <!-- Brand / toggle -->
       <div class="flex items-center justify-between h-12 px-2">
         <div class="flex items-center gap-2">
-          <img src="/assets/logo-bk.jpeg" class="h-8 w-auto object-contain" alt="BKO Construction" />
-          <div v-if="!sidebarCompact" class="font-display text-xl">BKO <span class="text-bk-gold">Construction</span></div>
+          <img src="/assets/logo-bk.jpeg" class="h-8 w-auto object-contain rounded-sm" alt="BKO Construction" />
+          <div v-if="!sidebarCompact" class="font-display text-xl tracking-tight">
+            BKO <span class="text-bk-gold">Construction</span>
+          </div>
         </div>
-        <button type="button"
-                class="hidden md:inline-flex items-center gap-1 text-xs rounded-md px-2 py-1 bg-white/10 ring-1 ring-white/15 hover:ring-bk-gold/50"
-                :title="sidebarCompact ? 'Étendre' : 'Réduire'"
-                @click="sidebarCompact=!sidebarCompact">
+        <button
+          type="button"
+          class="hidden md:inline-flex items-center gap-1 text-xs rounded-md px-2 py-1 bg-white/10 ring-1 ring-white/15 hover:ring-bk-gold/50"
+          :title="sidebarCompact ? 'Étendre' : 'Réduire'"
+          @click="sidebarCompact=!sidebarCompact"
+        >
           <svg viewBox="0 0 24 24" width="14" height="14"><path :d="icons.dash" fill="currentColor"/></svg>
           <span v-if="!sidebarCompact">Réduire</span>
         </button>
@@ -157,8 +186,9 @@ const year = new Date().getFullYear()
             :aria-current="itemIsActive(it) ? 'page' : undefined"
             :class="[
               'flex items-center gap-3 px-3 py-2 rounded-lg transition',
-              itemIsActive(it) ? 'bg-bk-gold text-bk-night shadow-[0_18px_38px_-18px_rgba(220,193,118,.60)]'
-                               : 'hover:bg-white/10'
+              itemIsActive(it)
+                ? 'bg-bk-gold text-bk-night shadow-[0_18px_38px_-18px_rgba(220,193,118,.60)]'
+                : 'hover:bg-white/10'
             ]"
           >
             <span class="inline-flex w-6 justify-center">
@@ -167,22 +197,28 @@ const year = new Date().getFullYear()
               </svg>
             </span>
             <span v-if="!sidebarCompact" class="flex-1 truncate">{{ it.label }}</span>
-            <span v-if="it.badge && !sidebarCompact"
-                  class="ml-auto inline-flex items-center justify-center px-2 h-5 rounded bg-bk-gold/20 text-bk-gold text-xs font-semibold">
+            <span
+              v-if="it.badge && !sidebarCompact"
+              class="ml-auto inline-flex items-center justify-center px-2 h-5 rounded bg-bk-gold/20 text-bk-gold text-xs font-semibold"
+            >
               {{ it.badge() }}
             </span>
           </Link>
 
           <!-- Tooltip en mode compact -->
-          <div v-if="sidebarCompact"
-               class="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition
-                      bg-[#0f141a]/95 ring-1 ring-white/15 rounded-md px-2 py-1 text-xs whitespace-nowrap">
+          <div
+            v-if="sidebarCompact"
+            class="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition
+                   bg-[#0f141a]/95 ring-1 ring-white/15 rounded-md px-2 py-1 text-xs whitespace-nowrap"
+          >
             {{ it.label }}
           </div>
         </div>
       </nav>
 
-      <div v-if="!sidebarCompact" class="mt-6 text-[11px] text-white/45 px-2">© {{ year }} BKO Construction · Back-office</div>
+      <div v-if="!sidebarCompact" class="mt-6 text-[11px] text-white/45 px-2">
+        © {{ year }} BKO Construction · Back-office
+      </div>
     </aside>
 
     <!-- HEADER + CONTENU -->
@@ -194,8 +230,12 @@ const year = new Date().getFullYear()
 
         <!-- barre recherche (ouvre palette) -->
         <div class="relative hidden sm:block ml-1" @click="openPalette">
-          <input id="hdr-search" readonly placeholder="Rechercher (⌘/Ctrl K)"
-                 class="h-9 w-[280px] rounded-lg bg-white/[.06] ring-1 ring-white/10 pl-8 pr-3 text-sm outline-none cursor-text">
+          <input
+            id="hdr-search"
+            readonly
+            placeholder="Rechercher (⌘/Ctrl K)"
+            class="h-9 w-[280px] rounded-lg bg-white/[.06] ring-1 ring-white/10 pl-8 pr-3 text-sm outline-none cursor-text"
+          >
           <span class="absolute left-2 top-1/2 -translate-y-1/2 opacity-70 pointer-events-none">
             <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.search" fill="currentColor"/></svg>
           </span>
@@ -220,9 +260,14 @@ const year = new Date().getFullYear()
                 <div class="text-sm font-semibold">{{ userName }}</div>
                 <div class="text-xs text-white/60">{{ userEmail }}</div>
                 <div class="mt-2 flex flex-wrap gap-1">
-                  <span v-for="r in (user?.roles || [])" :key="r"
-                        class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] uppercase tracking-wide">{{ r }}</span>
-                  <span v-if="user?.two_factor_enabled" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px]">2FA ON</span>
+                  <span
+                    v-for="r in (user?.roles || [])"
+                    :key="r"
+                    class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] uppercase tracking-wide"
+                  >{{ r }}</span>
+                  <span v-if="user?.two_factor_enabled" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px]">
+                    2FA ON
+                  </span>
                 </div>
                 <div v-if="user?.last_login_at" class="mt-1 text-[11px] text-white/45">
                   Dernière connexion : {{ user?.last_login_at }}
@@ -247,6 +292,12 @@ const year = new Date().getFullYear()
                     class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.projects" fill="currentColor"/></svg>
                 Nouveau projet
+              </Link>
+
+              <Link v-if="can('quotes.view') || has('admin')" :href="hrefSafe('admin.quotes.index')" @click="closeAccount"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path :d="icons.quotes" fill="currentColor"/></svg>
+                Devis & leads ({{ counts.leads ?? 0 }})
               </Link>
 
               <Link :href="hrefSafe('home')" @click="closeAccount"
@@ -303,3 +354,10 @@ const year = new Date().getFullYear()
     </div>
   </div>
 </template>
+
+<style scoped>
+/* scrollbars discrets */
+::-webkit-scrollbar{ width:10px; height:10px }
+::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.15); border-radius:10px; border:2px solid transparent; background-clip:content-box }
+::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.25); border:2px solid transparent; background-clip:content-box }
+</style>

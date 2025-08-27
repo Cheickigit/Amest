@@ -1,19 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
-
 use App\Http\Controllers\Admin\AccountSecurityController;
+use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\Admin\ProjectController;
+
+use App\Http\Controllers\Admin\QuoteAdminController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\QuoteController;
 use App\Http\Controllers\Public\TenderController;
 
-use App\Http\Controllers\Admin\ProjectController;
-use App\Http\Controllers\Admin\PostController;
-
-use App\Models\Project;
 use App\Models\Post;
+use App\Models\Project;
+
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
 
 /* -------------------- Public -------------------- */
 Route::get('/', function () {
@@ -153,5 +155,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::post('account/password',               [AccountSecurityController::class, 'updatePassword'])->name('account.password.update');
         Route::delete('account/sessions/{id}',        [AccountSecurityController::class, 'revokeSession' ])->name('account.sessions.revoke');
         Route::post('account/sessions/logout-others', [AccountSecurityController::class, 'logoutOthers'  ])->name('account.sessions.logout_others');
+         Route::get('quotes', [QuoteAdminController::class, 'index'])->name('quotes.index');
+        Route::get('quotes/{quote}', [QuoteAdminController::class, 'show'])->name('quotes.show');
+        Route::get('quotes/{quote}/files/{index}', [QuoteAdminController::class, 'download'])->name('quotes.file');
+        Route::delete('quotes/{quote}', [QuoteAdminController::class, 'destroy'])->name('quotes.destroy');
     });
 });
