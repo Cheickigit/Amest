@@ -1,3 +1,4 @@
+<!-- resources/js/Layouts/PublicLayout.vue -->
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
@@ -12,22 +13,22 @@ const page = usePage<PageProps>()
 const user = computed(() => page.props.auth?.user ?? null)
 
 /* ========== Ziggy helpers ========== */
-const Zig = (globalThis as any).Ziggy
-const route = (name: string, params?: any, absolute?: boolean) =>
-  ziggyRoute(name, params, absolute, Zig)
+const Zig = (globalThis as any)?.Ziggy
+const r = (name: string, params?: any, absolute = false, fallback = '#') => {
+  try { return ziggyRoute(name, params, absolute, Zig) } catch { return fallback }
+}
 
-/* Récupérer le nom de la route courante SANS violer la signature TS de ziggy */
+/* Récupérer la route courante sans casser TS */
 function getCurrentRoute(): string | null {
   try {
-    const r = (ziggyRoute as unknown as (() => any))()
-    if (r && typeof r.current === 'function') return r.current() as string
+    const fn = ziggyRoute as unknown as (() => any)
+    const inst = fn?.()
+    if (inst && typeof inst.current === 'function') return inst.current() as string
   } catch {}
   try {
     const g = (globalThis as any).route
-    if (typeof g === 'function') {
-      const r2 = g()
-      if (r2 && typeof r2.current === 'function') return r2.current()
-    }
+    const inst = typeof g === 'function' ? g() : null
+    if (inst && typeof inst.current === 'function') return inst.current()
   } catch {}
   return null
 }
@@ -38,27 +39,23 @@ const open = ref(false)
 const scrolled = ref(false)
 const progress = ref(0)
 
-/* Smart-hide de la topbar au scroll */
+/* Smart-hide — ne cache que la TOPBAR */
 const SMART_HIDE = true
 const topbarPinned = ref(true)
 const lastY = ref(0)
 const lastDeltaDown = ref(false)
 const headerHover = ref(false)
 
-/* Ancre active (uniquement quand on est sur la Home) */
-const currentHash = ref('')
-const setHash = () => (currentHash.value = (globalThis as any)?.location?.hash ?? '')
+/* Bouton “retour en haut” */
+const showUp = ref(false)
+function scrollToTop(){ window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
 /* Données contact — BKO */
 const phoneDisplay = ref('+212 7 70 55 60 21')
 const phoneHref    = ref('tel:+212770556021')
 const whatsappHref = ref('https://wa.me/212770556021')
-const email        = ref('contact@bkconstruction.ma')
+const email        = ref('contact@bkoconstruction.com')
 const city         = ref('Tanger, Maroc')
-
-/* Bouton “retour en haut” */
-const showUp = ref(false)
-function scrollToTop(){ window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
 /* ========== Events ========== */
 function onScroll(){
@@ -71,10 +68,10 @@ function onScroll(){
 
   if (SMART_HIDE) {
     const delta = y - lastY.value
-    if (Math.abs(delta) > 2) {
-      if (delta > 0 && y > 64) { topbarPinned.value = false; lastDeltaDown.value = true }
-      else if (delta < 0)      { topbarPinned.value = true;  lastDeltaDown.value = false }
-    }
+    // Seuil descente > 1 px -> topbar se replie
+    if (delta > 1 && y > 64) { topbarPinned.value = false; lastDeltaDown.value = true }
+    // Remontée de 1 px -> ré-affichage instantané
+    else if (delta < 0)      { topbarPinned.value = true;  lastDeltaDown.value = false }
   } else {
     topbarPinned.value = true
   }
@@ -95,36 +92,18 @@ function onHeaderLeave(){
 
 onMounted(() => {
   lastY.value = window.scrollY
-  setHash()
   onScroll()
   window.addEventListener('scroll', onScroll, { passive:true })
   window.addEventListener('resize', onResize)
   window.addEventListener('mousemove', onMouse)
-  window.addEventListener('hashchange', setHash, { passive:true })
 })
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('resize', onResize)
   window.removeEventListener('mousemove', onMouse)
-  window.removeEventListener('hashchange', setHash)
 })
 
-/* ========== Nav Active & Liens ========== */
-/** Renvoie un href qui marche depuis n’importe quelle page :
- *  - si on est sur la home => "#section"
- *  - sinon => route('home') + "#section"
- */
-function hrefHomeHash(section: string){
-  const h = `#${section}`
-  return currentRouteName.value === 'home' ? h : `${route('home')}${h}`
-}
-
-/** Actif quand on est sur la Home ET que le hash courant matche */
-function isActiveHash(section: string){
-  return currentRouteName.value === 'home' && currentHash.value === `#${section}`
-}
-
-/** Actif quand la route commence par le préfixe donné */
+/* ========== Active helpers (si besoin) ========== */
 function isActiveRoute(prefixes: string[]){
   const n = currentRouteName.value ?? ''
   return prefixes.some(p => n.startsWith(p))
@@ -136,26 +115,19 @@ function isActiveRoute(prefixes: string[]){
 
     <!-- BACKDROP décoratif -->
     <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
-      <div class="absolute inset-0 opacity-[.06] mix-blend-overlay
-                  bg-[length:36px_36px,36px_36px]
-                  bg-[linear-gradient(to_right,rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.2)_1px,transparent_1px)]"></div>
-      <div class="absolute -top-[12%] -left-[15%] w-[50vw] h-[45vh] blur-[70px] mix-blend-screen
-                  bg-[radial-gradient(60%_60%_at_30%_30%,#dcc176_0%,transparent_60%)] opacity-[.55]"></div>
-      <div class="absolute -bottom-[20%] -right-[10%] w-[55vw] h-[55vh] blur-[70px] mix-blend-screen
-                  bg-[radial-gradient(60%_60%_at_70%_70%,#fdfdfe_0%,transparent_60%)] opacity-20"></div>
-      <div class="absolute top-[25%] right-[35%] w-[34vw] h-[34vh] blur-[70px] mix-blend-screen
-                  bg-[conic-gradient(from_90deg_at_50%_50%,rgba(220,193,118,.55),rgba(253,253,254,.12),rgba(220,193,118,.55))] opacity-20"></div>
-      <div class="absolute inset-0 pointer-events-none
-                  [background:radial-gradient(350px_350px_at_calc(var(--mx)*100%)_calc(var(--my)*100%),rgba(255,255,255,.06),transparent_60%)]"></div>
+      <div class="bk-grid"></div>
+      <div class="atlas-aurora a"></div>
+      <div class="atlas-aurora b"></div>
+      <div class="atlas-aurora c"></div>
+      <div class="spotlight"></div>
+      <div class="atlas-grain"></div>
     </div>
 
     <!-- Barre de progression lecture -->
-    <div class="fixed top-0 left-0 h-[2.5px] w-full origin-left transform-gpu
-                bg-gradient-to-r from-bk-gold to-white/70 z-[60]"
-         :style="`transform:scaleX(${progress})`"></div>
+    <div class="progress-line" :style="`transform:scaleX(${progress})`"></div>
 
-    <!-- HEADER -->
-    <div
+    <!-- HEADER (navbar toujours visible) -->
+    <header
       class="fixed top-0 inset-x-0 z-50 border-b transition-all duration-300 ease-out
              backdrop-blur supports-[backdrop-filter]:bg-[#151e27]/80 bg-[#151e27]/92
              h-[76px] lg:h-[108px]"
@@ -164,7 +136,7 @@ function isActiveRoute(prefixes: string[]){
     >
       <div class="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <!-- TOPBAR (smart hide) -->
+        <!-- TOPBAR (smart hide SEULEMENT cette barre) -->
         <div
           class="absolute top-0 left-0 right-0 hidden lg:flex h-10 items-center justify-between
                  text-[13px] text-white/85 border-b border-white/10
@@ -172,8 +144,7 @@ function isActiveRoute(prefixes: string[]){
           :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[calc(100%+1px)]'"
         >
           <div class="flex items-center gap-6">
-            <span class="inline-flex items-center gap-2 rounded-md px-2 py-1 font-extrabold text-[12px]
-                         text-white bg-white/10 ring-1 ring-white/20 shadow-inner">MA</span>
+            <span class="chip-ma">MA</span>
             <span class="text-white/85">Entreprise marocaine de BTP — Qualité • Sécurité • Délais</span>
 
             <a :href="phoneHref" class="inline-flex items-center gap-2 hover:text-bk-gold">
@@ -210,60 +181,39 @@ function isActiveRoute(prefixes: string[]){
                     rounded-b-full transition-all duration-300"
              :class="topbarPinned ? 'opacity-0 -translate-y-3' : 'opacity-100 translate-y-0'"></div>
 
-        <!-- NAVBAR -->
-        <div class="absolute inset-x-0 bottom-0 flex items-center justify-between
-                    h-[76px] lg:transition-[height] lg:duration-300"
-             :class="topbarPinned ? 'lg:h-[66px]' : 'lg:h-[108px]'">
-
-          <Link :href="route('home')" class="flex items-center">
-            <img :class="['object-contain transition-all duration-300', topbarPinned ? 'h-10 md:h-12' : 'h-12 md:h-14']"
-                 src="/assets/logo-bk.jpeg" alt="BKO Construction logo">
+        <!-- NAVBAR (reste TJS visible) -->
+        <div class="absolute inset-x-0 bottom-0 flex items-center justify-between h-[76px]">
+          <Link :href="r('home', {}, false, '/')" class="flex items-center">
+            <img :class="['brand-logo']" src="/assets/logo-bk.jpeg" alt="BKO Construction — bkoconstruction.com">
           </Link>
 
           <!-- NAV DESKTOP -->
           <nav class="hidden md:flex items-center gap-1 rounded-2xl px-1 py-1 bg-white/5 ring-1 ring-white/10">
-            <a :href="hrefHomeHash('services')"
-               :class="['group relative rounded-full px-4 py-2 transition hover:-translate-y-0.5 ring-1 ring-transparent',
-                        isActiveHash('services') ? 'bg-bk-gold/15 text-bk-gold ring-bk-gold/40' : 'text-white/90 hover:text-white hover:ring-bk-gold/40']">
-              Services
-            </a>
-            <Link :href="route('public.projects')"
-                  :class="['group relative rounded-full px-4 py-2 transition hover:-translate-y-0.5 ring-1 ring-transparent',
-                           isActiveRoute(['public.projects','public.projects.show']) ? 'bg-bk-gold/15 text-bk-gold ring-bk-gold/40' : 'text-white/90 hover:text-white hover:ring-bk-gold/40']">
-              Réalisations
-            </Link>
-            <Link :href="route('public.posts')"
-                  :class="['group relative rounded-full px-4 py-2 transition hover:-translate-y-0.5 ring-1 ring-transparent',
-                           isActiveRoute(['public.posts','public.posts.show']) ? 'bg-bk-gold/15 text-bk-gold ring-bk-gold/40' : 'text-white/90 hover:text-white hover:ring-bk-gold/40']">
-              Actualités
-            </Link>
-            <a :href="hrefHomeHash('rfp')"
-               :class="['group relative rounded-full px-4 py-2 transition hover:-translate-y-0.5 ring-1 ring-transparent',
-                        isActiveHash('rfp') ? 'bg-bk-gold/15 text-bk-gold ring-bk-gold/40' : 'text-white/90 hover:text-white hover:ring-bk-gold/40']">
-              Appels d’offres
-            </a>
-            <a :href="hrefHomeHash('contact')"
-               :class="['group relative rounded-full px-4 py-2 transition hover:-translate-y-0.5 ring-1 ring-transparent',
-                        isActiveHash('contact') ? 'bg-bk-gold/15 text-bk-gold ring-bk-gold/40' : 'text-white/90 hover:text-white hover:ring-bk-gold/40']">
-              Contact
-            </a>
+            <Link :href="r('home', {}, false, '/')" class="nav-pill" :class="isActiveRoute(['home']) ? 'text-bk-gold' : ''">Accueil</Link>
+            <Link :href="r('public.about', {}, false, '/a-propos')" class="nav-pill" :class="isActiveRoute(['public.about']) ? 'text-bk-gold' : ''">À propos</Link>
+            <Link :href="r('public.services', {}, false, '/services')" class="nav-pill" :class="isActiveRoute(['public.services']) ? 'text-bk-gold' : ''">Services</Link>
+            <Link :href="r('public.projects', {}, false, '/realisations')" class="nav-pill" :class="isActiveRoute(['public.projects','public.projects.show']) ? 'text-bk-gold' : ''">Réalisations</Link>
+            <Link :href="r('public.posts', {}, false, '/actualites')" class="nav-pill" :class="isActiveRoute(['public.posts','public.posts.show']) ? 'text-bk-gold' : ''">Actualités</Link>
+            <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="nav-pill" :class="isActiveRoute(['public.rfp']) ? 'text-bk-gold' : ''">Appels d’offres</Link>
+            <Link :href="r('public.contact', {}, false, '/contact')" class="nav-pill" :class="isActiveRoute(['public.contact']) ? 'text-bk-gold' : ''">Contact</Link>
           </nav>
 
           <div class="hidden md:flex items-center gap-3">
-            <a :href="hrefHomeHash('devis')"
-               class="relative inline-flex items-center justify-center font-extrabold tracking-wide
-                      rounded-xl px-4 py-2 bg-bk-gold text-bk-night shadow-[0_16px_40px_-16px_rgba(220,193,118,.45)]
-                      transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-bk-gold/60">
-              <span class="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent
-                           [mask-image:linear-gradient(90deg,transparent,black,transparent)] animate-[shine_2.8s_ease-in-out_infinite]"></span>
+            <Link :href="r('public.rfp', {}, false, '/devis')" class="btn-gold">
+              <span class="btn-glow"></span>
+              <span class="btn-shine"></span>
               Demander un devis
-            </a>
-            <Link v-if="!user" :href="route('login')"
+            </Link>
+            <Link v-if="!user" :href="r('login', {}, false, '/login')"
                   class="inline-flex items-center justify-center rounded-xl px-4 py-2
-                         border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Se connecter</Link>
-            <Link v-else :href="route('dashboard')"
+                         border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">
+              Se connecter
+            </Link>
+            <Link v-else :href="r('dashboard', {}, false, '/dashboard')"
                   class="inline-flex items-center justify-center rounded-xl px-4 py-2
-                         border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Espace</Link>
+                         border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">
+              Espace
+            </Link>
           </div>
 
           <!-- Burger -->
@@ -277,7 +227,7 @@ function isActiveRoute(prefixes: string[]){
           </button>
         </div>
       </div>
-    </div>
+    </header>
 
     <!-- Spacer sous header -->
     <div class="h-[76px] lg:h-[108px]" aria-hidden="true"></div>
@@ -285,45 +235,31 @@ function isActiveRoute(prefixes: string[]){
     <!-- Overlay + Drawer Mobile -->
     <div v-show="open" class="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm" @click="open=false"></div>
     <div v-show="open" id="mobile-drawer" role="dialog" aria-modal="true" class="fixed top-2 inset-x-2 z-[61]">
-      <div class="relative overflow-hidden rounded-2xl border border-white/15 text-bk-off
-                  shadow-[0_30px_80px_-20px_rgba(0,0,0,.7)]
-                  bg-gradient-to-b from-[#0f141a]/95 to-[#0f141a]/80"
-           @click.stop>
+      <div class="mobile-header relative overflow-hidden rounded-2xl border border-white/15 text-bk-off" @click.stop>
         <div class="flex items-center justify-between px-4 pt-3 pb-2">
-          <img src="/assets/logo-bk.jpeg" class="h-10 w-auto object-contain" alt="BKO Construction">
+          <img src="/assets/logo-bk.jpeg" class="h-10 w-auto object-contain" alt="BKO Construction — bkoconstruction.com">
           <button class="p-2 rounded-lg bg-white/10 border border-white/15 hover:border-bk-gold/60 transition" @click="open=false" aria-label="Fermer">
             <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
         </div>
 
         <div class="grid grid-cols-2 gap-2 px-3 pb-3">
-          <a :href="hrefHomeHash('services')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
-                                     bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Services</a>
-          <Link :href="route('public.projects')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
-                                     bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Réalisations</Link>
-          <Link :href="route('public.posts')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
-                                     bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Actualités</Link>
-          <a :href="hrefHomeHash('rfp')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
-                                     bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Appels d’offres</a>
-          <a :href="hrefHomeHash('contact')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold
-                                     bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Contact</a>
+          <Link :href="r('home', {}, false, '/')"           class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Accueil</Link>
+          <Link :href="r('public.about', {}, false, '/a-propos')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">À propos</Link>
+          <Link :href="r('public.services', {}, false, '/services')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Services</Link>
+          <Link :href="r('public.projects', {}, false, '/realisations')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Réalisations</Link>
+          <Link :href="r('public.posts', {}, false, '/actualites')"  class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Actualités</Link>
+          <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Appels d’offres</Link>
+          <Link :href="r('public.contact', {}, false, '/contact')"  class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Contact</Link>
         </div>
 
         <div class="px-3 pb-3 grid gap-2">
-          <a :href="hrefHomeHash('devis')"
-             class="relative inline-flex items-center justify-center font-extrabold tracking-wide
-                    rounded-xl px-4 py-2 bg-bk-gold text-bk-night shadow-[0_16px_40px_-16px_rgba(220,193,118,.45)]
-                    transition hover:-translate-y-0.5 text-center"
-             @click="open=false">
-            <span class="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent
-                         [mask-image:linear-gradient(90deg,transparent,black,transparent)] animate-[shine_2.8s_ease-in-out_infinite]"></span>
-            Devis express
-          </a>
+          <Link :href="r('public.rfp', {}, false, '/devis')" class="btn-gold text-center" @click="open=false">
+            <span class="btn-glow"></span><span class="btn-shine"></span> Devis express
+          </Link>
           <div class="flex gap-2">
-            <Link v-if="!user" :href="route('login')" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2
-                                       border border-white/15 text-white hover:border-bk-gold/60 transition" @click="open=false">Se connecter</Link>
-            <Link v-else :href="route('dashboard')" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2
-                                       border border-white/15 text-white hover:border-bk-gold/60 transition" @click="open=false">Espace</Link>
+            <Link v-if="!user" :href="r('login', {}, false, '/login')" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition" @click="open=false">Se connecter</Link>
+            <Link v-else :href="r('dashboard', {}, false, '/dashboard')" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition" @click="open=false">Espace</Link>
           </div>
         </div>
       </div>
@@ -332,41 +268,29 @@ function isActiveRoute(prefixes: string[]){
     <!-- CONTENU PAGE -->
     <main id="page-content"><slot /></main>
 
- <!-- FOOTER (overflow-proof) -->
-<footer class="mt-16 text-sm relative overflow-hidden">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-    <div class="relative rounded-2xl isolate">
-      <!-- halo -->
-      <div class="absolute inset-0 -z-10 blur-[70px] opacity-30 mix-blend-screen
-                  bg-[radial-gradient(60%_60%_at_20%_20%,#dcc176_0%,transparent_60%)]"></div>
-
-      <!-- cadre doré (clip activé) -->
-      <div class="relative rounded-2xl overflow-hidden p-[1px]
-                  bg-[conic-gradient(at_30%_30%,rgba(220,193,118,.8),rgba(255,255,255,.15),rgba(220,193,118,.8))]">
-        <!-- carte -->
-        <div class="relative rounded-[inherit] overflow-hidden bg-white/[.06] backdrop-blur border border-white/10
-                    shadow-[0_40px_120px_-40px_rgba(0,0,0,.65)]">
-
-          <!-- grain doux -->
-          <div class="pointer-events-none absolute inset-0 rounded-[inherit] opacity-10
-                      [background-image:radial-gradient(rgba(255,255,255,.28)_0.6px,transparent_0.6px)]
-                      [background-size:6px_6px]"></div>
+    <!-- FOOTER : une seule card 3D -->
+    <footer class="mt-16 text-sm relative overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+        <div class="relative footer-card gradient-ring">
+          <!-- halos/glows -->
+          <div class="glow g1"></div>
+          <div class="glow g2"></div>
+          <div class="glow g3"></div>
 
           <!-- contenu -->
-          <div class="relative grid gap-6 p-5 lg:grid-cols-5 lg:gap-8 lg:p-8">
+          <div class="footer-content">
             <!-- Col 1 -->
             <div class="min-w-0">
-              <img src="/assets/logo-bk.jpeg" class="h-12 w-auto object-contain mb-2" alt="BKO Construction">
+              <img src="/assets/logo-bk.jpeg" class="footer-logo" alt="BKO Construction — bkoconstruction.com">
               <p class="text-bk-off/85">Entreprise marocaine de BTP : routes, bâtiments, VRD, génie civil & immobilier.</p>
-              <div class="flex gap-2 mt-2">
-                <a :href="whatsappHref" target="_blank" rel="noopener"
-                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" aria-label="WhatsApp">
+              <div class="actions">
+                <a :href="whatsappHref" target="_blank" rel="noopener" class="icon-btn" aria-label="WhatsApp">
                   <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 3.5A10 10 0 0012 1a10 10 0 00-8.66 15.07L2 23l7.12-1.87A10 10 0 0022 11a10 10 0 00-2-7.5zM12 19a8 8 0 118-8 8 8 0 01-8 8z"/></svg>
                 </a>
-                <a :href="phoneHref" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" aria-label="Appeler">
+                <a :href="phoneHref" class="icon-btn" aria-label="Appeler">
                   <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>
                 </a>
-                <a :href="'mailto:' + email" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" aria-label="Email">
+                <a :href="'mailto:' + email" class="icon-btn" aria-label="Email">
                   <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 8l-8 5-8-5V6l8 5 8-5v2z"/><path fill="currentColor" d="M20 18H4v-2h16v2z"/></svg>
                 </a>
               </div>
@@ -374,52 +298,48 @@ function isActiveRoute(prefixes: string[]){
 
             <!-- Col 2 -->
             <div>
-              <div class="font-bold text-bk-gold mb-3">Services</div>
-              <ul class="grid gap-2 text-bk-off/92">
-                <li><a :href="hrefHomeHash('services')" class="hover:text-bk-gold">Routes & VRD</a></li>
-                <li><a :href="hrefHomeHash('services')" class="hover:text-bk-gold">Bâtiments</a></li>
-                <li><a :href="hrefHomeHash('services')" class="hover:text-bk-gold">Immobilier</a></li>
-                <li><a :href="hrefHomeHash('services')" class="hover:text-bk-gold">Rénovation</a></li>
-                <li><a :href="hrefHomeHash('services')" class="hover:text-bk-gold">Génie civil</a></li>
+              <div class="footer-title">Navigation</div>
+              <ul class="list">
+                <li><Link :href="r('home', {}, false, '/')">Accueil</Link></li>
+                <li><Link :href="r('public.about', {}, false, '/a-propos')">À propos</Link></li>
+                <li><Link :href="r('public.services', {}, false, '/services')">Services</Link></li>
+                <li><Link :href="r('public.projects', {}, false, '/realisations')">Réalisations</Link></li>
+                <li><Link :href="r('public.posts', {}, false, '/actualites')">Actualités</Link></li>
               </ul>
             </div>
 
             <!-- Col 3 -->
             <div>
-              <div class="font-bold text-bk-gold mb-3">Secteurs</div>
-              <ul class="grid gap-2 text-bk-off/92">
-                <li><a href="#" class="hover:text-bk-gold">Public & Collectivités</a></li>
-                <li><a href="#" class="hover:text-bk-gold">Immobilier privé</a></li>
-                <li><a href="#" class="hover:text-bk-gold">Industrie & Logistique</a></li>
-                <li><a href="#" class="hover:text-bk-gold">Infrastructures urbaines</a></li>
+              <div class="footer-title">Ressources</div>
+              <ul class="list">
+                <li><Link :href="r('public.rfp', {}, false, '/appels-d-offres')">Appels d’offres & Devis</Link></li>
+                <li><Link :href="r('public.contact', {}, false, '/contact')">Contact</Link></li>
+                <li><a href="https://bkoconstruction.com" target="_blank" rel="noopener">bkoconstruction.com</a></li>
               </ul>
             </div>
 
             <!-- Col 4 -->
             <div>
-              <div class="font-bold text-bk-gold mb-3">Ressources</div>
-              <ul class="grid gap-2 text-bk-off/92">
-                <li><Link :href="route('public.projects')" class="hover:text-bk-gold">Réalisations</Link></li>
-                <li><Link :href="route('public.posts')" class="hover:text-bk-gold">Actualités</Link></li>
-                
+              <div class="footer-title">Contact</div>
+              <ul class="list">
+                <li><a :href="phoneHref">Tél : <span class="text-bk-off">{{ phoneDisplay }}</span></a></li>
+                <li><a :href="'mailto:' + email">{{ email }}</a></li>
+                <li class="text-bk-off/75">{{ city }}</li>
               </ul>
             </div>
 
             <!-- Col 5 -->
             <div class="min-w-0">
-              <div class="font-bold text-bk-gold mb-3">Contact</div>
-              <ul class="grid gap-1.5 mb-3 text-bk-off/92">
-                <li><a :href="phoneHref">Tél : <span class="text-bk-off">{{ phoneDisplay }}</span></a></li>
-                <li><a :href="'mailto:' + email">{{ email }}</a></li>
-                <li class="text-bk-off/75">{{ city }}</li>
-              </ul>
-
-             
+              <div class="footer-title">Newsletter</div>
+              <form class="newsletter" @submit.prevent>
+                <input type="email" placeholder="Votre email" required>
+                <button type="submit">S’inscrire</button>
+              </form>
             </div>
           </div>
 
-          <!-- barre bas de carte -->
-          <div class="border-t border-dashed border-white/15 px-5 py-4 lg:px-8 flex flex-col md:flex-row gap-3 md:items-center md:justify-between text-bk-off/85">
+          <!-- bottom bar -->
+          <div class="footer-bottom">
             <div class="min-w-0">
               © {{ new Date().getFullYear() }}
               <a href="https://1clickmali.com" target="_blank" rel="noopener" class="font-semibold hover:text-bk-gold">1Click Mali</a>.
@@ -429,7 +349,7 @@ function isActiveRoute(prefixes: string[]){
             <div class="text-bk-off/75 min-w-0">
               RC : <span class="text-bk-off/90">xxxxx</span> · ICE : <span class="text-bk-off/90">xxxxxxxxxxxx</span> · IF : <span class="text-bk-off/90">xxxxxxxx</span> · Patente : <span class="text-bk-off/90">xxxxxxx</span>
             </div>
-            <div class="flex gap-4 shrink-0">
+            <div class="links">
               <a :href="whatsappHref" target="_blank" rel="noopener" class="hover:text-bk-gold">WhatsApp</a>
               <a :href="phoneHref" class="hover:text-bk-gold">Appel</a>
               <a :href="'mailto:' + email" class="hover:text-bk-gold">Email</a>
@@ -437,10 +357,7 @@ function isActiveRoute(prefixes: string[]){
           </div>
         </div>
       </div>
-    </div>      
-  </div>
-</footer>
-
+    </footer>
 
     <!-- Actions flottantes -->
     <a :href="whatsappHref" target="_blank" rel="noopener"
@@ -453,11 +370,11 @@ function isActiveRoute(prefixes: string[]){
       class="fixed bottom-5 right-20 md:right-24 inline-flex items-center justify-center w-10 h-10 rounded-full
              bg-white/10 border border-white/15 hover:border-bk-gold/60 backdrop-blur z-40 transition"
       aria-label="Retour en haut">
-      <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l6 6-1.4 1.4L13 7.8V20h-2V7.8L7.4 11.4 6 10l6-6z"/></svg> 
+      <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l6 6-1.4 1.4L13 7.8V20h-2V7.8L7.4 11.4 6 10l6-6z"/></svg>
     </button>
   </div>
 </template>
 
-<style scoped>
-@keyframes shine { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+<style scoped lang="postcss">
+/* Tous les styles globaux (3D, boutons, footer-card, etc.) sont dans resources/css/app.css */
 </style>
