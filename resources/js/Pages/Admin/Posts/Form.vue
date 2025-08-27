@@ -33,7 +33,7 @@ const form = useForm({
   tagInput:     '' as string,
 })
 
-/* Auto-slug (sans écraser si l’utilisateur édite manuellement) */
+/* Auto-slug (sans écraser si l’utilisateur tape le slug) */
 const slugTouched = ref(false)
 const slugify = (s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,200)
@@ -58,16 +58,13 @@ function addTag(){
 }
 function removeTag(i:number){ form.tags.splice(i,1) }
 
-/* Submit: POST + _method=PUT si édition + redirection fiable */
+/* Submit : POST + _method=PUT si édition + redirection fiable */
 function submit(){
   const url = isEdit.value
     ? route('admin.posts.update', props.item!.id)
     : route('admin.posts.store')
 
-  form.transform(d=>({
-    ...d,
-    ...(isEdit.value ? { _method:'PUT' as const } : {}),
-  }))
+  form.transform(d=>({ ...d, ...(isEdit.value ? { _method:'PUT' as const } : {}) }))
 
   form.post(url, {
     forceFormData:true,
@@ -79,15 +76,17 @@ function submit(){
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto text-white">
-    <!-- header -->
+  <div class="max-w-5xl mx-auto text-bk-off">
+    <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <div>
-        <div class="text-[11px] text-white/50">BKO Construction / Back-office</div>
+        <div class="text-[11px] text-bk-off/60">BKO Construction / Back-office</div>
         <h1 class="text-2xl font-extrabold">{{ isEdit ? 'Modifier un article' : 'Nouvel article' }}</h1>
       </div>
       <div class="flex items-center gap-2">
-        <Link :href="route('admin.posts.index')" class="px-3 h-10 inline-flex items-center rounded-lg bg-white/10 hover:bg-white/15">Retour</Link>
+        <Link :href="route('admin.posts.index')" class="px-3 h-10 inline-flex items-center rounded-lg bg-white/10 hover:bg-white/15 text-bk-off">
+          Retour
+        </Link>
         <button type="button" :disabled="form.processing" @click="submit"
                 class="px-4 h-10 inline-flex items-center gap-2 rounded-lg bg-bk-gold text-bk-night font-bold hover:brightness-95 disabled:opacity-60">
           Enregistrer
@@ -95,7 +94,7 @@ function submit(){
       </div>
     </div>
 
-    <!-- progress -->
+    <!-- Upload progress -->
     <div v-if="form.progress" class="h-1 mb-4 rounded bg-white/10 overflow-hidden">
       <div class="h-1 bg-bk-gold" :style="{ width: `${form.progress.percentage}%` }"></div>
     </div>
@@ -108,68 +107,86 @@ function submit(){
     <form @submit.prevent="submit" class="grid gap-5">
       <div class="grid md:grid-cols-2 gap-4">
         <label class="grid gap-1">
-          <span class="text-white/70 text-sm">Titre *</span>
-          <input v-model="form.title" required class="bg-white/5 ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none focus:ring-bk-gold/50" />
+          <span class="text-bk-off/70 text-sm">Titre *</span>
+          <input v-model="form.title" required
+                 class="bg-white/[.06] ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none text-bk-off placeholder:text-bk-off/50 focus:ring-bk-gold/50" />
         </label>
         <label class="grid gap-1">
-          <span class="text-white/70 text-sm">Slug</span>
-          <input v-model="form.slug" @input="slugTouched=true" class="bg-white/5 ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none focus:ring-bk-gold/50" />
+          <span class="text-bk-off/70 text-sm">Slug</span>
+          <input v-model="form.slug" @input="slugTouched=true"
+                 class="bg-white/[.06] ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none text-bk-off placeholder:text-bk-off/50 focus:ring-bk-gold/50" />
         </label>
       </div>
 
       <div class="grid md:grid-cols-3 gap-4">
         <label class="grid gap-1">
-          <span class="text-white/70 text-sm">Statut</span>
-          <select v-model="form.status" class="bg-white/5 ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none">
-            <option value="brouillon">Brouillon</option>
-            <option value="publié">Publié</option>
-          </select>
+          <span class="text-bk-off/70 text-sm">Statut</span>
+          <div class="relative">
+            <select v-model="form.status"
+                    class="h-10 w-full appearance-none rounded-lg bg-white/[.06] ring-1 ring-white/10 px-3 pr-8 outline-none text-bk-off [color-scheme:dark] focus:ring-bk-gold/50">
+              <option value="brouillon">Brouillon</option>
+              <option value="publié">Publié</option>
+            </select>
+            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 opacity-70">▾</span>
+          </div>
         </label>
         <label class="grid gap-1 md:col-span-2">
-          <span class="text-white/70 text-sm">Publication (optionnel)</span>
-          <input type="datetime-local" v-model="form.published_at" class="bg-white/5 ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none" />
+          <span class="text-bk-off/70 text-sm">Publication (optionnel)</span>
+          <input type="datetime-local" v-model="form.published_at"
+                 class="h-10 rounded-lg bg-white/[.06] ring-1 ring-white/10 px-3 outline-none text-bk-off placeholder:text-bk-off/50 [color-scheme:dark] focus:ring-bk-gold/50" />
         </label>
       </div>
 
       <label class="grid gap-1">
-        <span class="text-white/70 text-sm">Résumé</span>
-        <textarea v-model="form.excerpt" rows="2" class="bg-white/5 ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none"></textarea>
+        <span class="text-bk-off/70 text-sm">Résumé</span>
+        <textarea v-model="form.excerpt" rows="2"
+                  class="bg-white/[.06] ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none text-bk-off placeholder:text-bk-off/50 focus:ring-bk-gold/50"></textarea>
       </label>
 
       <label class="grid gap-1">
-        <span class="text-white/70 text-sm">Contenu</span>
-        <textarea v-model="form.body" rows="8" class="bg-white/5 ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none"></textarea>
+        <span class="text-bk-off/70 text-sm">Contenu</span>
+        <textarea v-model="form.body" rows="8"
+                  class="bg-white/[.06] ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none text-bk-off placeholder:text-bk-off/50 focus:ring-bk-gold/50"></textarea>
       </label>
 
       <div class="grid md:grid-cols-2 gap-4">
         <label class="grid gap-1">
-          <span class="text-white/70 text-sm">Image de couverture</span>
-          <input type="file" accept="image/*" @change="onCover" />
-          <div v-if="props.item?.cover_image && !coverPreview" class="text-xs text-white/60">Actuelle : <span class="underline">/storage/{{ props.item.cover_image }}</span></div>
+          <span class="text-bk-off/70 text-sm">Image de couverture</span>
+          <input type="file" accept="image/*" @change="onCover" class="text-bk-off [color-scheme:dark]" />
+          <div v-if="props.item?.cover_image && !coverPreview" class="text-xs text-bk-off/60">
+            Actuelle : <span class="underline">/storage/{{ props.item.cover_image }}</span>
+          </div>
         </label>
 
         <div class="grid gap-1">
-          <span class="text-white/70 text-sm">Tags</span>
+          <span class="text-bk-off/70 text-sm">Tags</span>
           <div class="flex gap-2">
-            <input v-model="form.tagInput" class="flex-1 bg-white/5 ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none" @keyup.enter.prevent="addTag" />
-            <button type="button" @click="addTag" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15">Ajouter</button>
+            <input v-model="form.tagInput"
+                   class="flex-1 bg-white/[.06] ring-1 ring-white/10 rounded-lg px-3 py-2 outline-none text-bk-off placeholder:text-bk-off/50 focus:ring-bk-gold/50"
+                   @keyup.enter.prevent="addTag" />
+            <button type="button" @click="addTag" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-bk-off">
+              Ajouter
+            </button>
           </div>
           <div class="flex flex-wrap gap-2 mt-2">
-            <span v-for="(t,i) in form.tags" :key="i" class="px-2 h-7 inline-flex items-center rounded-md bg-white/10 text-sm">
+            <span v-for="(t,i) in form.tags" :key="i" class="px-2 h-7 inline-flex items-center rounded-md bg-white/10 text-sm text-bk-off">
               {{ t }}
-              <button type="button" class="ml-2 text-white/60 hover:text-white" @click="removeTag(i)">✕</button>
+              <button type="button" class="ml-2 text-bk-off/60 hover:text-bk-off" @click="removeTag(i)">✕</button>
             </span>
           </div>
         </div>
       </div>
 
       <div>
-        <button class="px-4 h-10 inline-flex items-center rounded-lg bg-bk-gold text-bk-night font-bold hover:brightness-95">Enregistrer</button>
+        <button class="px-4 h-10 inline-flex items-center rounded-lg bg-bk-gold text-bk-night font-bold hover:brightness-95">
+          Enregistrer
+        </button>
       </div>
     </form>
 
-    <div class="mt-6 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-white/[.04]" v-if="coverPreview || props.item?.cover_image">
-      <div class="p-3 text-sm text-white/70">Aperçu — image de couverture</div>
+    <div class="mt-6 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-white/[.04]"
+         v-if="coverPreview || props.item?.cover_image">
+      <div class="p-3 text-sm text-bk-off/70">Aperçu — image de couverture</div>
       <div class="aspect-video bg-white/5">
         <img v-if="coverPreview" :src="coverPreview" class="w-full h-full object-cover" />
         <img v-else :src="`/storage/${props.item?.cover_image}`" class="w-full h-full object-cover" />
@@ -177,3 +194,12 @@ function submit(){
     </div>
   </div>
 </template>
+
+<style scoped>
+/* teinte uniforme, y compris le menu d’options natif */
+:global(select), :global(input), :global(textarea) { color: #e3e6ec; }
+:global(select option){ color:#e3e6ec; background:#0f141a; }
+:global(input::placeholder), :global(textarea::placeholder){ color:#e3e6ec99; }
+/* améliore le contraste quand l’OS force le thème clair */
+:global([color-scheme="dark"]){ color-scheme: dark; }
+</style>
