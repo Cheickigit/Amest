@@ -1,10 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountSecurityController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\ProjectController;
-
 use App\Http\Controllers\Admin\QuoteAdminController;
+
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\QuoteController;
 use App\Http\Controllers\Public\TenderController;
@@ -16,10 +17,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-
-/* -------------------- Public -------------------- */
+/* ===================== PUBLIC ===================== */
 Route::get('/', function () {
-    // Projets publiés (carrousel + grille)
+    // Projets (carrousel + grille)
     $carouselProjects = Project::query()
         ->where('status', 'publié')
         ->latest()
@@ -32,7 +32,7 @@ Route::get('/', function () {
         ->take(9)
         ->get(['id','title','slug','city','category','status','cover_image','media']);
 
-    // Articles publiés (les plus récents d’abord)
+    // Articles
     $posts = Post::query()
         ->where('status', 'publié')
         ->orderByDesc('published_at')
@@ -61,14 +61,8 @@ Route::get('/realisations', function () {
 })->name('public.projects');
 
 Route::get('/realisations/{slugOrId}', function (string $slugOrId) {
-    // 1) on tente par slug
     $query = Project::query()->where('slug', $slugOrId);
-
-    // 2) si le paramètre est 100% numérique, on ajoute la recherche par id
-    if (ctype_digit($slugOrId)) {
-        $query->orWhere('id', (int)$slugOrId);
-    }
-
+    if (ctype_digit($slugOrId)) $query->orWhere('id', (int)$slugOrId);
     $project = $query->firstOrFail();
 
     $related = Project::where('status','publié')
@@ -96,9 +90,7 @@ Route::get('/actualites', function () {
 
 Route::get('/actualites/{slugOrId}', function (string $slugOrId) {
     $query = Post::query()->where('slug', $slugOrId);
-    if (ctype_digit($slugOrId)) {
-        $query->orWhere('id', (int)$slugOrId);
-    }
+    if (ctype_digit($slugOrId)) $query->orWhere('id', (int)$slugOrId);
     $post = $query->firstOrFail();
 
     $more = Post::where('status','publié')
@@ -112,10 +104,8 @@ Route::get('/actualites/{slugOrId}', function (string $slugOrId) {
     ]);
 })->name('public.posts.show');
 
-/* -------------------- Auth + Portails -------------------- */
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
-    ->group(function () {
-
+/* ===================== AUTH + PORTAILS ===================== */
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         $u = Auth::user();
         if ($u && ($u->hasRole('admin') || $u->hasRole('chef_projet'))) {
@@ -132,12 +122,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::get('/client', fn () => Inertia::render('Client/Portal'))->name('client.portal');
         });
 
-    /* -------------------- Admin -------------------- */
+    /* ===================== ADMIN ===================== */
     Route::prefix('admin')->as('admin.')
         ->middleware(['role:admin|chef_projet', 'permission:access admin'])
         ->group(function () {
 
-        Route::get('/', fn () => Inertia::render('Admin/Dashboard'))->name('dashboard');
+        // ✅ Dashboard complet (contrôleur)
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
         // Réalisations
         Route::get('projects',                 [ProjectController::class, 'index'  ])->name('projects.index'  )->middleware('permission:projects.view');
@@ -147,7 +138,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::put('projects/{project}',       [ProjectController::class, 'update' ])->name('projects.update' )->middleware('permission:projects.edit');
         Route::delete('projects/{project}',    [ProjectController::class, 'destroy'])->name('projects.destroy')->middleware('permission:projects.delete');
 
-        // Actualités
+        // Actualités (CMS)
         Route::resource('posts', PostController::class)->except(['show'])->middleware('permission:cms.manage');
 
         // Compte & sécurité
@@ -155,9 +146,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::post('account/password',               [AccountSecurityController::class, 'updatePassword'])->name('account.password.update');
         Route::delete('account/sessions/{id}',        [AccountSecurityController::class, 'revokeSession' ])->name('account.sessions.revoke');
         Route::post('account/sessions/logout-others', [AccountSecurityController::class, 'logoutOthers'  ])->name('account.sessions.logout_others');
-         Route::get('quotes', [QuoteAdminController::class, 'index'])->name('quotes.index');
-        Route::get('quotes/{quote}', [QuoteAdminController::class, 'show'])->name('quotes.show');
-        Route::get('quotes/{quote}/files/{index}', [QuoteAdminController::class, 'download'])->name('quotes.file');
-        Route::delete('quotes/{quote}', [QuoteAdminController::class, 'destroy'])->name('quotes.destroy');
+
+        // Devis & leads
+        Route::get('quotes',                         [QuoteAdminController::class, 'index'   ])->name('quotes.index');
+        Route::get('quotes/{quote}',                 [QuoteAdminController::class, 'show'    ])->name('quotes.show');
+        Route::get('quotes/{quote}/files/{index}',   [QuoteAdminController::class, 'download'])->name('quotes.file');
+        Route::delete('quotes/{quote}',              [QuoteAdminController::class, 'destroy' ])->name('quotes.destroy');
     });
 });
