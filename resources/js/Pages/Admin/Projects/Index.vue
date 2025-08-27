@@ -6,13 +6,16 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 defineOptions({ layout: AdminLayout })
 
 type MediaItem = { type:'image'|'video', kind?:'upload'|'url', path?:string, url?:string }
-type Project   = { id:number; title:string; city?:string; category?:string; status?:'brouillon'|'publié'; cover_image?:string|null; media?:MediaItem[] }
+type Project   = {
+  id:number; title:string; city?:string; category?:string;
+  status?:'brouillon'|'publié'; cover_image?:string|null; media?:MediaItem[]
+}
 const props = defineProps<{ items: { data: Project[], links?: any[] } | Project[] }>()
 
 const Z = computed(() => (window as any).Ziggy)
 const route = (name:string, params?:any, absolute=false) => ziggyRoute(name, params ?? {}, absolute, Z.value)
 
-/* Icônes 3D (paths) — mêmes couleurs que le layout */
+/* Icônes 3D (paths) */
 const icons: Record<string,string> = {
   search:'M10 2a8 8 0 1 0 5.29 14.29l4.21 4.21l1.41-1.41l-4.21-4.21A8 8 0 0 0 10 2z',
   video:'M8 5v14l11-7L8 5z',
@@ -20,12 +23,12 @@ const icons: Record<string,string> = {
   trash:'M6 7h12v2H6zm2 3h8l-1 10H9L8 10zm3-5h2l1 2H10l1-2z',
 }
 
-/* filtres */
+/* Filtres */
 const q      = ref('')
 const status = ref<'all'|'publié'|'brouillon'>('all')
 const sort   = ref<'recent'|'title'>('recent')
 
-const raw  = computed<Project[]>(() => Array.isArray(props.items) ? props.items : props.items.data ?? [])
+const raw  = computed<Project[]>(() => Array.isArray(props.items) ? props.items : (props.items.data ?? []))
 const list = computed<Project[]>(() => {
   let arr = raw.value
     .filter(p => !q.value || p.title.toLowerCase().includes(q.value.toLowerCase()))
@@ -36,7 +39,10 @@ const list = computed<Project[]>(() => {
 
 function del(id:number){
   if(!confirm('Supprimer cette réalisation ?')) return
-  router.delete(route('admin.projects.destroy', id), { preserveScroll:true })
+  router.delete(route('admin.projects.destroy', id), {
+    preserveScroll:true,
+    onSuccess:()=> router.visit(route('admin.projects.index')),
+  })
 }
 const hasVideo = (p:Project)=> (p.media||[]).some(m=>m.type==='video')
 </script>
@@ -48,24 +54,42 @@ const hasVideo = (p:Project)=> (p.media||[]).some(m=>m.type==='video')
       <h1 class="text-2xl font-extrabold tracking-tight">Réalisations</h1>
       <div class="flex-1"></div>
 
+      <!-- Recherche -->
       <div class="relative">
-        <input v-model="q" placeholder="Rechercher un titre…" class="h-10 w-64 rounded-lg bg-white/[.06] ring-1 ring-white/10 pl-8 pr-3 text-sm outline-none focus:ring-bk-gold/50" />
+        <input
+          v-model="q"
+          placeholder="Rechercher un titre…"
+          class="h-10 w-64 rounded-lg bg-white/[.06] ring-1 ring-white/10 pl-8 pr-3 text-sm outline-none
+                 text-white placeholder:text-white/60 focus:ring-bk-gold/50" />
         <span class="absolute left-2 top-1/2 -translate-y-1/2 opacity-70">
-          <svg viewBox="0 0 24 24" width="16" height="16"><defs><linearGradient id="g-sea" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F5E7B7"/><stop offset="50%" stop-color="#DCC176"/><stop offset="100%" stop-color="#8C7635"/></linearGradient></defs><path fill="url(#g-sea)" :d="icons.search"/></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <defs><linearGradient id="g-sea" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F5E7B7"/><stop offset="50%" stop-color="#DCC176"/><stop offset="100%" stop-color="#8C7635"/></linearGradient></defs>
+            <path fill="url(#g-sea)" :d="icons.search"/>
+          </svg>
         </span>
       </div>
 
+      <!-- Statut -->
       <div class="inline-flex rounded-lg bg-white/5 ring-1 ring-white/10 p-1 h-10">
-        <button type="button" @click="status='all'"      :class="['px-2.5 text-xs rounded-md', status==='all'?'bg-bk-gold text-bk-night font-semibold':'text-white/80 hover:text-white']">Tous</button>
-        <button type="button" @click="status='publié'"    :class="['px-2.5 text-xs rounded-md', status==='publié'?'bg-bk-gold text-bk-night font-semibold':'text-white/80 hover:text-white']">Publiés</button>
-        <button type="button" @click="status='brouillon'" :class="['px-2.5 text-xs rounded-md', status==='brouillon'?'bg-bk-gold text-bk-night font-semibold':'text-white/80 hover:text-white']">Brouillons</button>
+        <button type="button" @click="status='all'"
+                :class="['px-2.5 text-xs rounded-md', status==='all'?'bg-bk-gold text-bk-night font-semibold':'text-white/80 hover:text-white']">Tous</button>
+        <button type="button" @click="status='publié'"
+                :class="['px-2.5 text-xs rounded-md', status==='publié'?'bg-bk-gold text-bk-night font-semibold':'text-white/80 hover:text-white']">Publiés</button>
+        <button type="button" @click="status='brouillon'"
+                :class="['px-2.5 text-xs rounded-md', status==='brouillon'?'bg-bk-gold text-bk-night font-semibold':'text-white/80 hover:text-white']">Brouillons</button>
       </div>
 
-      <select v-model="sort" class="h-10 rounded-lg bg-white/[.06] ring-1 ring-white/10 px-3 text-sm outline-none">
+      <!-- Tri -->
+      <select
+        v-model="sort"
+        class="h-10 rounded-lg bg-white/[.06] ring-1 ring-white/10 px-3 text-sm outline-none
+               text-white [color-scheme:dark]
+               [&>option]:bg-[#0f141a] [&>option]:text-white">
         <option value="recent">Plus récents</option>
         <option value="title">Titre (A→Z)</option>
       </select>
 
+      <!-- Nouveau -->
       <Link :href="route('admin.projects.create')"
             class="h-10 inline-flex items-center gap-2 rounded-lg px-3 bg-bk-gold text-bk-night font-semibold shadow-[0_16px_40px_-16px_rgba(220,193,118,.45)] hover:-translate-y-0.5 transition">
         Nouveau
@@ -87,7 +111,9 @@ const hasVideo = (p:Project)=> (p.media||[]).some(m=>m.type==='video')
       <article v-for="p in list" :key="p.id" class="group rounded-2xl overflow-hidden ring-1 ring-white/10 bg-white/[.04] hover:ring-bk-gold/40 transition">
         <div class="relative aspect-video bg-white/5 overflow-hidden">
           <img v-if="p.cover_image" :src="`/storage/${p.cover_image}`" class="w-full h-full object-cover" :alt="p.title" />
-          <div v-else class="h-full w-full grid place-items-center text-white/40 text-sm bg-gradient-to-br from-white/10 to-transparent">Aucune couverture</div>
+          <div v-else class="h-full w-full grid place-items-center text-white/40 text-sm bg-gradient-to-br from-white/10 to-transparent">
+            Aucune couverture
+          </div>
 
           <div v-if="hasVideo(p)" class="absolute top-2 left-2 rounded-full bg-black/60 px-2 h-6 grid place-items-center text-xs">
             <svg viewBox="0 0 24 24" width="14" height="14"><defs><linearGradient id="g-vid" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F5E7B7"/><stop offset="100%" stop-color="#DCC176"/></linearGradient></defs><path fill="url(#g-vid)" :d="icons.video"/></svg>
@@ -110,10 +136,13 @@ const hasVideo = (p:Project)=> (p.media||[]).some(m=>m.type==='video')
               </div>
             </div>
             <div class="flex gap-1">
-              <Link :href="route('admin.projects.edit', p.id)" title="Éditer" class="px-2 py-1 rounded bg-white/10 text-xs hover:bg-white/15">
+              <Link :href="route('admin.projects.edit', p.id)"
+                    title="Éditer"
+                    class="px-2 py-1 rounded bg-white/10 text-xs hover:bg-white/15">
                 <svg viewBox="0 0 24 24" width="14" height="14"><defs><linearGradient id="g-ed" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F5E7B7"/><stop offset="100%" stop-color="#DCC176"/></linearGradient></defs><path fill="url(#g-ed)" :d="icons.edit"/></svg>
               </Link>
-              <button type="button" @click="del(p.id)" title="Supprimer" class="px-2 py-1 rounded bg-red-500/15 text-red-200 text-xs hover:bg-red-500/25">
+              <button type="button" @click="del(p.id)" title="Supprimer"
+                      class="px-2 py-1 rounded bg-red-500/15 text-red-200 text-xs hover:bg-red-500/25">
                 <svg viewBox="0 0 24 24" width="14" height="14"><defs><linearGradient id="g-tr" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F5E7B7"/><stop offset="100%" stop-color="#DCC176"/></linearGradient></defs><path fill="url(#g-tr)" :d="icons.trash"/></svg>
               </button>
             </div>
