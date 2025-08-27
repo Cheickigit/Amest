@@ -12,7 +12,7 @@ class Project extends Model
     ];
 
     protected $casts = [
-        'media' => 'array', // [{type:'image'|'video', kind:'upload'|'url', path?:string, url?:string, mime?:string, size?:int}]
+        'media' => 'array',
         'year'  => 'integer',
     ];
 }

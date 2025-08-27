@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 use App\Http\Controllers\Admin\AccountSecurityController;
 use App\Http\Controllers\Public\ContactController;
@@ -12,18 +12,108 @@ use App\Http\Controllers\Public\TenderController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\PostController;
 
-/* -------- Public -------- */
-Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
+use App\Models\Project;
+use App\Models\Post;
 
+/* -------------------- Public -------------------- */
+Route::get('/', function () {
+    // Projets publiés (carrousel + grille)
+    $carouselProjects = Project::query()
+        ->where('status', 'publié')
+        ->latest()
+        ->take(6)
+        ->get(['id','title','slug','city','category','status','cover_image','media']);
+
+    $gridProjects = Project::query()
+        ->where('status', 'publié')
+        ->latest()
+        ->take(9)
+        ->get(['id','title','slug','city','category','status','cover_image','media']);
+
+    // Articles publiés (les plus récents d’abord)
+    $posts = Post::query()
+        ->where('status', 'publié')
+        ->orderByDesc('published_at')
+        ->take(6)
+        ->get(['id','title','slug','excerpt','cover_image','published_at']);
+
+    return Inertia::render('Welcome', [
+        'heroProjects' => $carouselProjects,
+        'projects'     => $gridProjects,
+        'posts'        => $posts,
+    ]);
+})->name('home');
+
+// Formulaires publics
 Route::post('/contact', [ContactController::class, 'store'])->name('forms.contact.store');
 Route::post('/devis',   [QuoteController::class,   'store'])->name('forms.quote.store');
 Route::post('/rfp',     [TenderController::class,  'store'])->name('forms.tender.store');
 
-/* -------- Auth + Portails -------- */
+/* -------- Réalisations (public) -------- */
+Route::get('/realisations', function () {
+    return Inertia::render('Public/Projects/Index', [
+        'items' => Project::where('status','publié')
+            ->latest()
+            ->paginate(9, ['id','slug','title','category','city','cover_image','media','excerpt']),
+    ]);
+})->name('public.projects');
+
+Route::get('/realisations/{slugOrId}', function (string $slugOrId) {
+    // 1) on tente par slug
+    $query = Project::query()->where('slug', $slugOrId);
+
+    // 2) si le paramètre est 100% numérique, on ajoute la recherche par id
+    if (ctype_digit($slugOrId)) {
+        $query->orWhere('id', (int)$slugOrId);
+    }
+
+    $project = $query->firstOrFail();
+
+    $related = Project::where('status','publié')
+        ->where('id','<>',$project->id)
+        ->latest()->take(6)
+        ->get(['id','slug','title','cover_image','category','city']);
+
+    return Inertia::render('Public/Projects/Show', [
+        'item'    => $project->only([
+            'id','slug','title','category','city','client','year',
+            'cover_image','excerpt','body','media'
+        ]),
+        'related' => $related,
+    ]);
+})->name('public.projects.show');
+
+/* -------- Actualités (public) -------- */
+Route::get('/actualites', function () {
+    return Inertia::render('Public/Posts/Index', [
+        'items' => Post::where('status','publié')
+            ->orderByDesc('published_at')
+            ->paginate(9, ['id','slug','title','excerpt','published_at','cover_image','tags']),
+    ]);
+})->name('public.posts');
+
+Route::get('/actualites/{slugOrId}', function (string $slugOrId) {
+    $query = Post::query()->where('slug', $slugOrId);
+    if (ctype_digit($slugOrId)) {
+        $query->orWhere('id', (int)$slugOrId);
+    }
+    $post = $query->firstOrFail();
+
+    $more = Post::where('status','publié')
+        ->where('id','<>',$post->id)
+        ->orderByDesc('published_at')->take(6)
+        ->get(['id','slug','title','cover_image','published_at']);
+
+    return Inertia::render('Public/Posts/Show', [
+        'item' => $post->only(['id','slug','title','excerpt','body','cover_image','published_at','tags']),
+        'more' => $more,
+    ]);
+})->name('public.posts.show');
+
+/* -------------------- Auth + Portails -------------------- */
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
     ->group(function () {
 
-    // Redirection dashboard générique
     Route::get('/dashboard', function () {
         $u = Auth::user();
         if ($u && ($u->hasRole('admin') || $u->hasRole('chef_projet'))) {
@@ -35,21 +125,19 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-    // Espace client
     Route::middleware(['role:client|admin|chef_projet', 'permission:access client portal|access admin'])
         ->group(function () {
             Route::get('/client', fn () => Inertia::render('Client/Portal'))->name('client.portal');
         });
 
-    /* -------- ADMIN (un seul groupe, clair) -------- */
+    /* -------------------- Admin -------------------- */
     Route::prefix('admin')->as('admin.')
         ->middleware(['role:admin|chef_projet', 'permission:access admin'])
         ->group(function () {
 
-        // Dashboard
         Route::get('/', fn () => Inertia::render('Admin/Dashboard'))->name('dashboard');
 
-        // Réalisations (permissions fines par action)
+        // Réalisations
         Route::get('projects',                 [ProjectController::class, 'index'  ])->name('projects.index'  )->middleware('permission:projects.view');
         Route::get('projects/create',          [ProjectController::class, 'create' ])->name('projects.create' )->middleware('permission:projects.create');
         Route::post('projects',                [ProjectController::class, 'store'  ])->name('projects.store'  )->middleware('permission:projects.create');
@@ -57,7 +145,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::put('projects/{project}',       [ProjectController::class, 'update' ])->name('projects.update' )->middleware('permission:projects.edit');
         Route::delete('projects/{project}',    [ProjectController::class, 'destroy'])->name('projects.destroy')->middleware('permission:projects.delete');
 
-        // Actualités (selon ton besoin, ici simple)
+        // Actualités
         Route::resource('posts', PostController::class)->except(['show'])->middleware('permission:cms.manage');
 
         // Compte & sécurité
