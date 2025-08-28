@@ -3,25 +3,23 @@ import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { route as ziggyRoute } from 'ziggy-js'
 
-/* ========== Types Min ========== */
 type PageAuth = { user?: Record<string, unknown> | null }
 type PageProps = { auth?: PageAuth }
 
-/* ========== Page & User ========== */
 const page = usePage<PageProps>()
 const user = computed(() => page.props.auth?.user ?? null)
 
-/* ========== Ziggy helper robuste (avec fallback) ========== */
+/* Fallbacks -> noms EXACTS des routes Laravel */
 const FALLBACKS: Record<string, string> = {
   home: '/',
-  about: '/a-propos',
-  'services.index': '/services',
+  'public.about': '/a-propos',
+  'public.services': '/services',
   'public.projects': '/realisations',
   'public.projects.show': '/realisations',
   'public.posts': '/actualites',
   'public.posts.show': '/actualites',
-  'rfp.index': '/appels-d-offres',
-  contact: '/contact',
+  'public.rfp': '/appels-d-offres',
+  'public.contact': '/contact',
   'public.quote': '/devis',
   login: '/login',
   dashboard: '/dashboard',
@@ -35,7 +33,7 @@ function r(name: string, params?: any, absolute = false, fallback?: string) {
   return fallback ?? FALLBACKS[name] ?? '#'
 }
 
-/* Récupération du nom de route courant (safe pour TS) */
+/* Route courante (avec fallback par URL si Ziggy indispo) */
 function getCurrentRoute(): string | null {
   try {
     const fn = ziggyRoute as unknown as (() => any)
@@ -52,39 +50,42 @@ function getCurrentRoute(): string | null {
   return null
 }
 const currentRouteName = computed<string | null>(() => getCurrentRoute())
+const currentUrl = computed(() => (usePage() as any).url || window.location.pathname)
 
-/* ========== Header state ========== */
+function isActive(name: string, startsWith = false) {
+  const n = currentRouteName.value
+  if (n) return startsWith ? n.startsWith(name + '.') || n === name : n === name
+  const target = r(name)
+  return startsWith ? String(currentUrl.value).startsWith(String(target)) : String(currentUrl.value) === String(target)
+}
+
+/* ====== Header state / décor ====== */
 const open = ref(false)
 const scrolled = ref(false)
 const progress = ref(0)
 
-/* Smart-hide : SEULE la topbar se cache/affiche, navbar reste fixe */
 const SMART_HIDE = true
 const topbarPinned = ref(true)
 const lastY = ref(0)
 const lastDeltaDown = ref(false)
 const headerHover = ref(false)
 
-/* Données contact — BKOCONSTRUCTION */
+/* Contact */
 const phoneDisplay = ref('+212 7 70 55 60 21')
 const phoneHref    = ref('tel:+212770556021')
 const whatsappHref = ref('https://wa.me/212770556021')
 const email        = ref('contact@bkoconstruction.com')
 const city         = ref('Tanger, Maroc')
 
-/* Bouton “retour en haut” */
+/* Scroll / FX */
 const showUp = ref(false)
 function scrollToTop(){ window.scrollTo({ top: 0, behavior: 'smooth' }) }
-
-/* ========== Events ========== */
 function onScroll(){
   const y = window.scrollY
   scrolled.value = y > 8
   showUp.value   = y > 320
-
   const h = document.documentElement.scrollHeight - window.innerHeight
   progress.value = h > 0 ? Math.min(1, y / h) : 0
-
   if (SMART_HIDE) {
     const delta = y - lastY.value
     if (delta > 1 && y > 64) { topbarPinned.value = false; lastDeltaDown.value = true }
@@ -119,12 +120,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
   window.removeEventListener('mousemove', onMouse)
 })
-
-/* ========== Nav Active & utilitaires ========== */
-function isActiveRoute(prefixes: string[]){
-  const n = currentRouteName.value ?? ''
-  return prefixes.some(p => n === p || n.startsWith(p + '.'))
-}
 </script>
 
 <template>
@@ -142,7 +137,7 @@ function isActiveRoute(prefixes: string[]){
     <!-- Barre de progression lecture -->
     <div class="progress-line" :style="`transform:scaleX(${progress})`"></div>
 
-    <!-- ======= HEADER (grille fixe : topbar + navbar) ======= -->
+    <!-- ======= HEADER ======= -->
     <header
       class="fixed top-0 inset-x-0 z-50 border-b transition-all duration-300 ease-out
              backdrop-blur supports-[backdrop-filter]:bg-[#151e27]/80 bg-[#151e27]/92
@@ -150,16 +145,11 @@ function isActiveRoute(prefixes: string[]){
       :class="scrolled ? 'border-white/15 shadow-[0_10px_40px_-30px_rgba(0,0,0,.8)]' : 'border-white/10'"
       @mouseenter="onHeaderEnter" @mouseleave="onHeaderLeave"
     >
-      <div
-        class="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
-               grid grid-rows-[0px_76px] lg:grid-rows-[40px_68px]"
-      >
+      <div class="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-rows-[0px_76px] lg:grid-rows-[40px_68px]">
         <!-- TOPBAR -->
         <div
-          class="row-start-1 row-end-2 hidden lg:flex h-10 items-center justify-between
-                 text-[13px] text-white/85 border-b border-white/10
-                 transition-all duration-200 ease-out bg-gradient-to-b from-white/5 to-transparent
-                 will-change-[transform,opacity]"
+          class="row-start-1 row-end-2 hidden lg:flex h-10 items-center justify-between text-[13px] text-white/85 border-b border-white/10
+                 transition-all duration-200 ease-out bg-gradient-to-b from-white/5 to-transparent will-change-[transform,opacity]"
           :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'"
         >
           <div class="flex items-center gap-6">
@@ -194,41 +184,34 @@ function isActiveRoute(prefixes: string[]){
           </div>
         </div>
 
-        <!-- NAVBAR (fixe) -->
+        <!-- NAVBAR -->
         <div class="row-start-2 row-end-3 flex items-center justify-between">
           <Link :href="r('home')" class="flex items-center">
             <img class="brand-logo" src="/assets/logo-bk.jpeg" alt="BKOCONSTRUCTION logo">
           </Link>
 
-          <!-- NAV DESKTOP -->
           <nav class="hidden md:flex items-center gap-1 rounded-2xl px-1 py-1 bg-white/5 ring-1 ring-white/10">
-            <Link :href="r('home')" :class="['nav-pill', isActiveRoute(['home']) ? 'text-bk-gold' : '']" :aria-current="isActiveRoute(['home']) ? 'page' : undefined">Accueil</Link>
-            <Link :href="r('about')" :class="['nav-pill', isActiveRoute(['about']) ? 'text-bk-gold' : '']" :aria-current="isActiveRoute(['about']) ? 'page' : undefined">À propos</Link>
-            <Link :href="r('services.index')" :class="['nav-pill', isActiveRoute(['services']) ? 'text-bk-gold' : '']" :aria-current="isActiveRoute(['services']) ? 'page' : undefined">Services</Link>
-            <Link :href="r('public.projects')" :class="['nav-pill', isActiveRoute(['public.projects']) ? 'text-bk-gold' : '']" :aria-current="isActiveRoute(['public.projects']) ? 'page' : undefined">Réalisations</Link>
-            <Link :href="r('public.posts')" :class="['nav-pill', isActiveRoute(['public.posts']) ? 'text-bk-gold' : '']" :aria-current="isActiveRoute(['public.posts']) ? 'page' : undefined">Actualités</Link>
-            <Link :href="r('rfp.index')" :class="['nav-pill', isActiveRoute(['rfp']) ? 'text-bk-gold' : '']" :aria-current="isActiveRoute(['rfp']) ? 'page' : undefined">Appels d’offres</Link>
-            <Link :href="r('contact')" :class="['nav-pill', isActiveRoute(['contact']) ? 'text-bk-gold' : '']" :aria-current="isActiveRoute(['contact']) ? 'page' : undefined">Contact</Link>
+            <Link :href="r('home')"            :class="['nav-pill', isActive('home') ? 'text-bk-gold' : '']"                        :aria-current="isActive('home') ? 'page' : undefined">Accueil</Link>
+            <Link :href="r('public.about')"    :class="['nav-pill', isActive('public.about') ? 'text-bk-gold' : '']"                :aria-current="isActive('public.about') ? 'page' : undefined">À propos</Link>
+            <Link :href="r('public.services')" :class="['nav-pill', isActive('public.services') ? 'text-bk-gold' : '']"             :aria-current="isActive('public.services') ? 'page' : undefined">Services</Link>
+            <Link :href="r('public.projects')" :class="['nav-pill', isActive('public.projects', true) ? 'text-bk-gold' : '']"        :aria-current="isActive('public.projects', true) ? 'page' : undefined">Réalisations</Link>
+            <Link :href="r('public.posts')"    :class="['nav-pill', isActive('public.posts', true) ? 'text-bk-gold' : '']"           :aria-current="isActive('public.posts', true) ? 'page' : undefined">Actualités</Link>
+            <Link :href="r('public.rfp')"      :class="['nav-pill', isActive('public.rfp') ? 'text-bk-gold' : '']"                  :aria-current="isActive('public.rfp') ? 'page' : undefined">Appels d’offres</Link>
+            <Link :href="r('public.contact')"  :class="['nav-pill', isActive('public.contact') ? 'text-bk-gold' : '']"              :aria-current="isActive('public.contact') ? 'page' : undefined">Contact</Link>
           </nav>
 
           <div class="hidden md:flex items-center gap-3">
-            <Link :href="r('public.quote')" class="btn-gold" :aria-current="isActiveRoute(['public.quote']) ? 'page' : undefined">
-              <span class="btn-glow"></span>
-              <span class="btn-shine"></span>
-              Demander un devis
+            <Link :href="r('public.quote')" class="btn-gold" :aria-current="isActive('public.quote') ? 'page' : undefined">
+              <span class="btn-glow"></span><span class="btn-shine"></span>Demander un devis
             </Link>
             <Link v-if="!user" :href="r('login')"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2
-                         border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Se connecter</Link>
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Se connecter</Link>
             <Link v-else :href="r('dashboard')"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2
-                         border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Espace</Link>
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Espace</Link>
           </div>
 
-          <!-- Burger (mobile) -->
-          <button class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl
-                         bg-white/10 text-white/95 border border-white/25
-                         hover:border-bk-gold/70 shadow-[0_12px_30px_-18px_rgba(0,0,0,.6)] transition"
+          <!-- Burger -->
+          <button class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white/95 border border-white/25 hover:border-bk-gold/70 shadow-[0_12px_30px_-18px_rgba(0,0,0,.6)] transition"
                   @click="open = !open" :aria-expanded="open" aria-controls="mobile-drawer">
             <span class="sr-only">Ouvrir le menu</span>
             <svg v-if="!open" viewBox="0 0 24 24" class="w-6 h-6"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
@@ -238,16 +221,13 @@ function isActiveRoute(prefixes: string[]){
       </div>
     </header>
 
-    <!-- Spacer sous header (hauteurs fixes : 76 / 108) -->
+    <!-- Spacer -->
     <div class="h-[76px] lg:h-[108px]" aria-hidden="true"></div>
 
     <!-- Overlay + Drawer Mobile -->
     <div v-show="open" class="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm" @click="open=false"></div>
     <div v-show="open" id="mobile-drawer" role="dialog" aria-modal="true" class="fixed top-2 inset-x-2 z-[61]">
-      <div class="relative overflow-hidden rounded-2xl border border-white/15 text-bk-off
-                  shadow-[0_30px_80px_-20px_rgba(0,0,0,.7)]
-                  bg-gradient-to-b from-[#0f141a]/95 to-[#0f141a]/80"
-           @click.stop>
+      <div class="relative overflow-hidden rounded-2xl border border-white/15 text-bk-off shadow-[0_30px_80px_-20px_rgba(0,0,0,.7)] bg-gradient-to-b from-[#0f141a]/95 to-[#0f141a]/80" @click.stop>
         <div class="flex items-center justify-between px-4 pt-3 pb-2">
           <img src="/assets/logo-bk.jpeg" class="h-10 w-auto object-contain" alt="BKOCONSTRUCTION">
           <button class="p-2 rounded-lg bg-white/10 border border-white/15 hover:border-bk-gold/60 transition" @click="open=false" aria-label="Fermer">
@@ -256,14 +236,14 @@ function isActiveRoute(prefixes: string[]){
         </div>
 
         <div class="grid grid-cols-2 gap-2 px-3 pb-3">
-          <Link :href="r('home')"              class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Accueil</Link>
-          <Link :href="r('about')"             class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">À propos</Link>
-          <Link :href="r('services.index')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Services</Link>
-          <Link :href="r('public.projects')"   class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Réalisations</Link>
-          <Link :href="r('public.posts')"      class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Actualités</Link>
-          <Link :href="r('rfp.index')"         class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Appels d’offres</Link>
-          <Link :href="r('contact')"           class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Contact</Link>
-          <Link :href="r('public.quote')"      class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Devis express</Link>
+          <Link :href="r('home')"            class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Accueil</Link>
+          <Link :href="r('public.about')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">À propos</Link>
+          <Link :href="r('public.services')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Services</Link>
+          <Link :href="r('public.projects')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Réalisations</Link>
+          <Link :href="r('public.posts')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Actualités</Link>
+          <Link :href="r('public.rfp')"      class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Appels d’offres</Link>
+          <Link :href="r('public.contact')"  class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Contact</Link>
+          <Link :href="r('public.quote')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Devis express</Link>
         </div>
 
         <div class="px-3 pb-3 grid gap-2">
@@ -281,7 +261,7 @@ function isActiveRoute(prefixes: string[]){
     <!-- CONTENU PAGE -->
     <main id="page-content"><slot /></main>
 
-    <!-- ======= FOOTER (une seule grande carte 3D) ======= -->
+    <!-- ======= FOOTER (réintégré) ======= -->
     <footer class="mt-16 text-sm relative overflow-hidden">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
         <div class="absolute inset-0 -z-10 blur-[70px] opacity-30 mix-blend-screen
@@ -310,21 +290,21 @@ function isActiveRoute(prefixes: string[]){
             <div>
               <div class="footer-title">Services</div>
               <ul class="list">
-                <li><Link :href="r('services.index')">Routes & VRD</Link></li>
-                <li><Link :href="r('services.index')">Bâtiments</Link></li>
-                <li><Link :href="r('services.index')">Immobilier</Link></li>
-                <li><Link :href="r('services.index')">Rénovation</Link></li>
-                <li><Link :href="r('services.index')">Génie civil</Link></li>
+                <li><Link :href="r('public.services')">Routes & VRD</Link></li>
+                <li><Link :href="r('public.services')">Bâtiments</Link></li>
+                <li><Link :href="r('public.services')">Immobilier</Link></li>
+                <li><Link :href="r('public.services')">Rénovation</Link></li>
+                <li><Link :href="r('public.services')">Génie civil</Link></li>
               </ul>
             </div>
 
             <div>
               <div class="footer-title">Secteurs</div>
               <ul class="list">
-                <li><Link :href="r('services.index')">Public & Collectivités</Link></li>
-                <li><Link :href="r('services.index')">Immobilier privé</Link></li>
-                <li><Link :href="r('services.index')">Industrie & Logistique</Link></li>
-                <li><Link :href="r('services.index')">Infrastructures urbaines</Link></li>
+                <li><Link :href="r('public.services')">Public & Collectivités</Link></li>
+                <li><Link :href="r('public.services')">Immobilier privé</Link></li>
+                <li><Link :href="r('public.services')">Industrie & Logistique</Link></li>
+                <li><Link :href="r('public.services')">Infrastructures urbaines</Link></li>
               </ul>
             </div>
 
@@ -333,7 +313,7 @@ function isActiveRoute(prefixes: string[]){
               <ul class="list">
                 <li><Link :href="r('public.projects')">Réalisations</Link></li>
                 <li><Link :href="r('public.posts')">Actualités</Link></li>
-                <li><Link :href="r('about')">À propos</Link></li>
+                <li><Link :href="r('public.about')">À propos</Link></li>
               </ul>
             </div>
 
@@ -367,21 +347,16 @@ function isActiveRoute(prefixes: string[]){
             </div>
           </div>
 
-        <div class="footer-bottom">
-  <div class="min-w-0">
-    © {{ new Date().getFullYear() }} BKO Construction.
-    Tous droits réservés.
-  </div>
-
-  <!-- Bloc RCCM/ICE/IF/Patente supprimé -->
-
-  <div class="links">
-    <a :href="whatsappHref" target="_blank" rel="noopener">WhatsApp</a>
-    <a :href="phoneHref">Appel</a>
-    <a :href="'mailto:' + email">Email</a>
-  </div>
-</div>
-
+          <div class="footer-bottom">
+            <div class="min-w-0">
+              © {{ new Date().getFullYear() }} BKO Construction. Tous droits réservés.
+            </div>
+            <div class="links">
+              <a :href="whatsappHref" target="_blank" rel="noopener">WhatsApp</a>
+              <a :href="phoneHref">Appel</a>
+              <a :href="'mailto:' + email">Email</a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

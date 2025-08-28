@@ -46,7 +46,7 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-// Formulaires publics
+/* -------- Formulaires publics (POST) -------- */
 Route::post('/contact', [ContactController::class, 'store'])->name('forms.contact.store');
 Route::post('/devis',   [QuoteController::class,   'store'])->name('forms.quote.store');
 Route::post('/rfp',     [TenderController::class,  'store'])->name('forms.tender.store');
@@ -104,6 +104,70 @@ Route::get('/actualites/{slugOrId}', function (string $slugOrId) {
     ]);
 })->name('public.posts.show');
 
+/* -------- Pages institutionnelles (SANS contrôleur) -------- */
+/* ⚠️ Tes fichiers sont dans resources/js/Pages/public/... (minuscule) */
+Route::get('/a-propos', function () {
+    return Inertia::render('public/About', [
+        'stats' => ['roads_km'=>120, 'buildings'=>40, 'years'=>1],
+    ]);
+})->name('public.about');
+
+Route::get('/services', function () {
+    return Inertia::render('public/Services', [
+        'groups' => [
+            [
+                'title' => 'Voirie & Réseaux (VRD)',
+                'items' => ['Chaussées souples & rigides', 'Assainissement pluvial & EU', 'Ouvrages hydrauliques', 'Signalisation & sécurité'],
+                'badge' => 'VRD',
+            ],
+            [
+                'title' => 'Bâtiments',
+                'items' => ['Structure béton & charpente', 'Cloisons & finitions premium', 'Lots techniques (CVC, CFO/CFA)', 'BIM exé & DOE'],
+                'badge' => 'BAT',
+            ],
+            [
+                'title' => 'Génie civil',
+                'items' => ['Ouvrages d’art', 'Soutènements & pieux', 'Bassins & réservoirs', 'Études d’exécution & phasage'],
+                'badge' => 'GC',
+            ],
+            [
+                'title' => 'Immobilier',
+                'items' => ['Promotion & AMO', 'Logements / tertiaire', 'Retail & parcs d’activités', 'Pilotage & OPC'],
+                'badge' => 'IMO',
+            ],
+            [
+                'title' => 'Rénovation & Réhabilitation',
+                'items' => ['Renforcement structurel', 'Mise aux normes HSE', 'Réhabilitation site occupé', 'Finitions haut de gamme'],
+                'badge' => 'REN',
+            ],
+            [
+                'title' => 'Ouvrages hydrauliques',
+                'items' => ['Canaux & dalots', 'Stations de pompage', 'Buses & microtunnels', 'Étanchéité & protections'],
+                'badge' => 'HYD',
+            ],
+        ],
+    ]);
+})->name('public.services');
+
+Route::get('/appels-d-offres', fn () => Inertia::render('public/Rfp'))->name('public.rfp');
+
+Route::get('/contact', function () {
+    return Inertia::render('public/Contact', [
+        'contact' => [
+            'phone_display' => '+212 7 70 55 60 21',
+            'phone_href'    => 'tel:+212770556021',
+            'whatsapp_href' => 'https://wa.me/212770556021',
+            'email'         => 'contact@bkoconstruction.com',
+            'city'          => 'Tanger, Maroc',
+            'hours'         => 'Lun–Sam : 8h30 – 18h',
+            'plus_code'     => 'P5H4+2J3 Tanger, Maroc',
+        ],
+    ]);
+})->name('public.contact');
+
+/* Alias CTA “Demander un devis” */
+Route::get('/devis', fn () => redirect()->route('public.rfp'))->name('public.quote');
+
 /* ===================== AUTH + PORTAILS ===================== */
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
     Route::get('/dashboard', function () {
@@ -127,30 +191,30 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->middleware(['role:admin|chef_projet', 'permission:access admin'])
         ->group(function () {
 
-        // ✅ Dashboard complet (contrôleur)
+        // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
         // Réalisations
-        Route::get('projects',                 [ProjectController::class, 'index'  ])->name('projects.index'  )->middleware('permission:projects.view');
-        Route::get('projects/create',          [ProjectController::class, 'create' ])->name('projects.create' )->middleware('permission:projects.create');
-        Route::post('projects',                [ProjectController::class, 'store'  ])->name('projects.store'  )->middleware('permission:projects.create');
-        Route::get('projects/{project}/edit',  [ProjectController::class, 'edit'   ])->name('projects.edit'   )->middleware('permission:projects.edit');
-        Route::put('projects/{project}',       [ProjectController::class, 'update' ])->name('projects.update' )->middleware('permission:projects.edit');
-        Route::delete('projects/{project}',    [ProjectController::class, 'destroy'])->name('projects.destroy')->middleware('permission:projects.delete');
+        Route::get('projects',                [ProjectController::class, 'index'])->name('projects.index')->middleware('permission:projects.view');
+        Route::get('projects/create',         [ProjectController::class, 'create'])->name('projects.create')->middleware('permission:projects.create');
+        Route::post('projects',               [ProjectController::class, 'store'])->name('projects.store')->middleware('permission:projects.create');
+        Route::get('projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit')->middleware('permission:projects.edit');
+        Route::put('projects/{project}',      [ProjectController::class, 'update'])->name('projects.update')->middleware('permission:projects.edit');  // ✅ le ']' manquant est corrigé
+        Route::delete('projects/{project}',   [ProjectController::class, 'destroy'])->name('projects.destroy')->middleware('permission:projects.delete');
 
         // Actualités (CMS)
         Route::resource('posts', PostController::class)->except(['show'])->middleware('permission:cms.manage');
 
         // Compte & sécurité
-        Route::get('account/security',                [AccountSecurityController::class, 'index'        ])->name('account.security');
+        Route::get('account/security',                [AccountSecurityController::class, 'index'])->name('account.security');
         Route::post('account/password',               [AccountSecurityController::class, 'updatePassword'])->name('account.password.update');
-        Route::delete('account/sessions/{id}',        [AccountSecurityController::class, 'revokeSession' ])->name('account.sessions.revoke');
-        Route::post('account/sessions/logout-others', [AccountSecurityController::class, 'logoutOthers'  ])->name('account.sessions.logout_others');
+        Route::delete('account/sessions/{id}',        [AccountSecurityController::class, 'revokeSession'])->name('account.sessions.revoke');
+        Route::post('account/sessions/logout-others', [AccountSecurityController::class, 'logoutOthers'])->name('account.sessions.logout_others');
 
         // Devis & leads
-        Route::get('quotes',                         [QuoteAdminController::class, 'index'   ])->name('quotes.index');
-        Route::get('quotes/{quote}',                 [QuoteAdminController::class, 'show'    ])->name('quotes.show');
-        Route::get('quotes/{quote}/files/{index}',   [QuoteAdminController::class, 'download'])->name('quotes.file');
-        Route::delete('quotes/{quote}',              [QuoteAdminController::class, 'destroy' ])->name('quotes.destroy');
+        Route::get('quotes',                        [QuoteAdminController::class, 'index'])->name('quotes.index');
+        Route::get('quotes/{quote}',                [QuoteAdminController::class, 'show'])->name('quotes.show');
+        Route::get('quotes/{quote}/files/{index}',  [QuoteAdminController::class, 'download'])->name('quotes.file');
+        Route::delete('quotes/{quote}',             [QuoteAdminController::class, 'destroy'])->name('quotes.destroy');
     });
 });
