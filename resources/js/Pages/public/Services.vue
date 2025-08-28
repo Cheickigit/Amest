@@ -2,7 +2,6 @@
 <script setup lang="ts">
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 import { Link } from '@inertiajs/vue3'
-import { ref } from 'vue'
 import { route as ziggyRoute } from 'ziggy-js'
 
 /* Helper Ziggy + fallback */
@@ -14,7 +13,7 @@ function r(name: string, params?: any, absolute = false, fallback: string = '#')
   } catch { return fallback }
 }
 
-/* v-reveal */
+/* v-reveal léger */
 let io:IntersectionObserver|null = null
 const vReveal = {
   mounted(el:HTMLElement){
@@ -29,255 +28,164 @@ const vReveal = {
     io.observe(el)
   }
 }
-
-/* Tilt 3D (cards) */
-function handleTilt(e:MouseEvent){
-  const el = e.currentTarget as HTMLElement|undefined; if(!el) return
-  const r = el.getBoundingClientRect()
-  const cx = (e.clientX - r.left)/r.width - .5
-  const cy = (e.clientY - r.top)/r.height - .5
-  el.style.setProperty('--rx', (-cy*10).toFixed(2)+'deg')
-  el.style.setProperty('--ry', (cx*10).toFixed(2)+'deg')
-}
-function resetTilt(e:MouseEvent){
-  const el = e.currentTarget as HTMLElement|undefined; if(!el) return
-  el.style.setProperty('--rx','0deg'); el.style.setProperty('--ry','0deg')
-}
-
-/* Onglets légers (vue filtrée) */
-type Tab = 'vrd'|'bat'|'gc'
-const tab = ref<Tab>('vrd')
 </script>
 
 <template>
   <PublicLayout>
-    <!-- HERO -->
+    <!-- HERO (3D à GAUCHE) -->
     <section class="relative overflow-hidden pt-14 md:pt-20 pb-10 md:pb-14">
       <div class="hero-ribbon" aria-hidden="true"></div>
-
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-12 gap-8 items-center">
-        <div class="lg:col-span-6" v-reveal>
+        <!-- 3D -->
+        <div class="lg:col-span-6 order-2 lg:order-1 relative" v-reveal>
+          <div class="hero-halo" aria-hidden="true"></div>
+          <div class="services3d" aria-hidden="true">
+            <div class="grid-floor"></div>
+            <div class="compass">
+              <span class="n">N</span><span class="e">E</span><span class="s">S</span><span class="w">W</span>
+              <div class="needle"></div>
+            </div>
+            <div class="wave">
+              <span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span>
+              <span style="--i:3"></span><span style="--i:4"></span><span style="--i:5"></span>
+              <span style="--i:6"></span><span style="--i:7"></span><span style="--i:8"></span>
+            </div>
+            <div class="scan"></div>
+          </div>
+        </div>
+
+        <!-- Texte -->
+        <div class="lg:col-span-6 order-1 lg:order-2" v-reveal>
           <span class="tag-ghost">Expertises — VRD, Bâtiments, Génie civil</span>
           <h1 class="mt-3 text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
             Nos <span class="text-bk-gold">services</span> pour des chantiers impeccables
           </h1>
           <p class="mt-4 text-white/80 max-w-2xl">
-            De la conception à la réception, BKOCONSTRUCTION assure des projets
-            performants : méthodes, traçabilité, qualité mesurée et sécurité prioritaire.
+            De la conception à la réception, BKOCONSTRUCTION délivre des ouvrages performants :
+            méthodes robustes, traçabilité, qualité mesurée et sécurité prioritaire.
           </p>
-
           <div class="mt-6 flex flex-wrap gap-2">
             <span class="chip">Métrés & variantes</span>
             <span class="chip">Phasage & délais</span>
             <span class="chip">Qualité & HSE</span>
           </div>
-
           <div class="mt-7 flex flex-col sm:flex-row gap-3">
             <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Déposer un DCE</Link>
             <Link :href="r('public.contact', {}, false, '/contact')" class="btn-ghost">Nous contacter</Link>
           </div>
         </div>
+      </div>
 
-        <!-- Scène 3D -->
+      <!-- ancres rapides -->
+      <div class="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" v-reveal>
+        <nav class="inline-flex rounded-xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur">
+          <a href="#vrd" class="px-4 py-2 text-sm font-semibold text-white/85 hover:text-white">Voirie & Réseaux</a>
+          <span class="border-l border-white/10"></span>
+          <a href="#bat" class="px-4 py-2 text-sm font-semibold text-white/85 hover:text-white">Bâtiments</a>
+          <span class="border-l border-white/10"></span>
+          <a href="#gc"  class="px-4 py-2 text-sm font-semibold text-white/85 hover:text-white">Génie civil</a>
+        </nav>
+      </div>
+    </section>
+
+    <!-- VRD (3D à DROITE) -->
+    <section id="vrd" class="py-10 md:py-14">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-6" v-reveal>
+          <h2 class="section-title text-left">Voirie & Réseaux (VRD)</h2>
+          <div class="mt-4 card ring-gold p-6 md:p-7">
+            <p class="text-white/80">
+              Terrassements, assainissement, chaussées et réseaux secs/humides, avec phasage maîtrisé pour limiter les impacts d’exploitation.
+            </p>
+            <ul class="mt-4 grid sm:grid-cols-2 gap-2 text-white/80 text-sm">
+              <li class="li-check">Chaussées souples/rigides & signalisation</li>
+              <li class="li-check">Pluvial, AEP, EU, éclairage public</li>
+              <li class="li-check">Fourreaux, chambres & tirage</li>
+              <li class="li-check">Ouvrages hydrauliques & bassins</li>
+            </ul>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Chiffrer un VRD</Link>
+              <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Réalisations</Link>
+            </div>
+          </div>
+        </div>
         <div class="lg:col-span-6 relative" v-reveal>
-          <div class="hero-halo" aria-hidden="true"></div>
-          <div class="persp">
-            <div class="platform"></div>
-            <div class="platform-cards">
-              <div class="iso-card" style="left:6%;  bottom:10%; --h:130px; --w:170px; --z:18;"></div>
-              <div class="iso-card" style="left:36%; bottom:18%; --h:106px; --w:140px; --z:24;"></div>
-              <div class="iso-card" style="left:60%; bottom:32%; --h:84px;  --w:120px; --z:36;"></div>
-            </div>
-            <svg class="crane" viewBox="0 0 520 260" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-              <g stroke-linecap="round" stroke-linejoin="round">
-                <path class="text-white/70" d="M60 240V70M60 70L40 40M60 70L80 40M60 120L40 90M60 120L80 90M60 170L40 140M60 170L80 140"/>
-                <path class="text-white/60" d="M20 240H100"/>
-                <path class="text-white/80" d="M60 70H330"/>
-                <rect class="text-bk-gold/80" x="300" y="58" width="30" height="20" fill="currentColor" stroke="transparent"/>
-                <g class="trolley" transform="translate(180 68)">
-                  <circle r="6" class="text-white" fill="currentColor" stroke="transparent"/>
-                  <path d="M0 6V88" class="text-white/70"/>
-                  <g class="hook">
-                    <rect x="-8" y="88" width="16" height="10" rx="2" class="text-bk-gold" fill="currentColor" stroke="transparent"/>
-                    <path d="M0 98v12" class="text-white/80"/>
-                    <rect x="-16" y="110" width="32" height="18" rx="2" class="text-white/80" fill="currentColor" stroke="transparent"/>
-                  </g>
-                </g>
-              </g>
-            </svg>
+          <div class="split3d vrd">
+            <div class="floor"></div>
+            <div class="road a"></div>
+            <div class="road b"></div>
+            <div class="manhole"></div>
+            <div class="pipe"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- TABS -->
-    <section class="pt-4" v-reveal>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="inline-flex rounded-xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur">
-          <button
-            class="px-4 py-2 text-sm font-semibold transition"
-            :class="tab==='vrd' ? 'bg-bk-gold text-bk-night' : 'text-white/85 hover:text-white'"
-            @click="tab='vrd'">Voirie & Réseaux</button>
-          <button
-            class="px-4 py-2 text-sm font-semibold transition border-l border-white/10"
-            :class="tab==='bat' ? 'bg-bk-gold text-bk-night' : 'text-white/85 hover:text-white'"
-            @click="tab='bat'">Bâtiments</button>
-          <button
-            class="px-4 py-2 text-sm font-semibold transition border-l border-white/10"
-            :class="tab==='gc' ? 'bg-bk-gold text-bk-night' : 'text-white/85 hover:text-white'"
-            @click="tab='gc'">Génie civil</button>
+    <!-- BAT (3D à GAUCHE) -->
+    <section id="bat" class="py-10 md:py-14">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-6 order-2 lg:order-1 relative" v-reveal>
+          <div class="split3d bat">
+            <div class="slab"></div>
+            <div class="core"></div>
+            <div class="beam"></div>
+            <div class="frame"></div>
+          </div>
         </div>
-      </div>
-    </section>
-
-    <!-- SERVICES — Grille 3D -->
-    <section class="py-10 md:py-14">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-6 md:grid-cols-3">
-        <!-- VRD -->
-        <article class="card-iso ring-gold" v-show="tab==='vrd'" @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal>
-          <div class="illus iso-vrd" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
-          <header class="flex items-center gap-3 mt-2">
-            <span class="badge-ghost">VRD</span>
-            <h3 class="text-xl font-bold">Voirie & Réseaux</h3>
-          </header>
-          <p class="text-white/80 mt-2">Terrassement, assainissement, chaussées, ouvrages hydrauliques.</p>
-          <ul class="mt-3 text-sm text-white/70 list-disc pl-5 space-y-1">
-            <li>Chaussées souples/rigides & signalisation</li>
-            <li>Pluvial, AEP, EU, fourreaux & éclairage</li>
-            <li>Ouvrages d’art & bassins de rétention</li>
-          </ul>
-          <div class="mt-4 flex gap-2">
-            <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Chiffrer un VRD</Link>
-            <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Réalisations</Link>
-          </div>
-        </article>
-
-        <!-- BAT -->
-        <article class="card-iso ring-gold" v-show="tab==='bat'" @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal>
-          <div class="illus iso-bat" aria-hidden="true"><span class="core"></span><span class="slab"></span><span class="beam"></span></div>
-          <header class="flex items-center gap-3 mt-2">
-            <span class="badge-ghost">BAT</span>
-            <h3 class="text-xl font-bold">Bâtiments</h3>
-          </header>
-          <p class="text-white/80 mt-2">Logements, tertiaire, industriel — structures béton & finitions.</p>
-          <ul class="mt-3 text-sm text-white/70 list-disc pl-5 space-y-1">
-            <li>Gros œuvre & second œuvre</li>
-            <li>Études d’exé, BIM & DOE</li>
-            <li>Contrôles qualité & essais</li>
-          </ul>
-          <div class="mt-4 flex gap-2">
-            <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Chiffrer un bâtiment</Link>
-            <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Réalisations</Link>
-          </div>
-        </article>
-
-        <!-- GC -->
-        <article class="card-iso ring-gold" v-show="tab==='gc'" @mousemove="handleTilt" @mouseleave="resetTilt" v-reveal>
-          <div class="illus iso-gc" aria-hidden="true"><span class="dam"></span><span class="pipe"></span></div>
-          <header class="flex items-center gap-3 mt-2">
-            <span class="badge-ghost">GC</span>
-            <h3 class="text-xl font-bold">Génie civil</h3>
-          </header>
-          <p class="text-white/80 mt-2">Hydraulique, soutènements, bassins, ouvrages spéciaux.</p>
-          <ul class="mt-3 text-sm text-white/70 list-disc pl-5 space-y-1">
-            <li>Études, notes de calcul & plans</li>
-            <li>Phasage précis & logistique de chantier</li>
-            <li>Réceptions, essais & DOE</li>
-          </ul>
-          <div class="mt-4 flex gap-2">
-            <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Chiffrer un GC</Link>
-            <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Réalisations</Link>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- CAPACITÉS / AVANTAGES -->
-    <section class="py-8 md:py-12" v-reveal>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="section-title text-center">Capacités clés</h2>
-        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div class="card ring-gold p-5">
-            <div class="flex items-center gap-3">
-              <span class="i i-check"></span><div class="font-bold">Méthodes & métrés</div>
+        <div class="lg:col-span-6 order-1 lg:order-2" v-reveal>
+          <h2 class="section-title text-left">Bâtiments</h2>
+          <div class="mt-4 card ring-gold p-6 md:p-7">
+            <p class="text-white/80">
+              Logements, tertiaire, industriel : structures béton, second œuvre soigné et coordination technique (BIM/EXE) pour des finitions nettes.
+            </p>
+            <ul class="mt-4 grid sm:grid-cols-2 gap-2 text-white/80 text-sm">
+              <li class="li-check">Gros œuvre & second œuvre</li>
+              <li class="li-check">Études d’exécution, synthèse & BIM</li>
+              <li class="li-check">Contrôles qualité & essais</li>
+              <li class="li-check">DOE structuré & garantie</li>
+            </ul>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Chiffrer un bâtiment</Link>
+              <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Réalisations</Link>
             </div>
-            <p class="text-white/75 mt-2 text-sm">Quantités fiabilisées, variantes optimisées et BPU clair.</p>
-          </div>
-          <div class="card ring-gold p-5">
-            <div class="flex items-center gap-3">
-              <span class="i i-plan"></span><div class="font-bold">Études & BIM</div>
-            </div>
-            <p class="text-white/75 mt-2 text-sm">Plans EXE, synthèse, coordination, DOE structuré.</p>
-          </div>
-          <div class="card ring-gold p-5">
-            <div class="flex items-center gap-3">
-              <span class="i i-helmet"></span><div class="font-bold">Qualité & Sécurité</div>
-            </div>
-            <p class="text-white/75 mt-2 text-sm">Traçabilité, contrôles réguliers, plan de prévention.</p>
-          </div>
-          <div class="card ring-gold p-5">
-            <div class="flex items-center gap-3">
-              <span class="i i-time"></span><div class="font-bold">Délais tenus</div>
-            </div>
-            <p class="text-white/75 mt-2 text-sm">Phasage réaliste, jalons et suivi visuel simple.</p>
-          </div>
-          <div class="card ring-gold p-5">
-            <div class="flex items-center gap-3">
-              <span class="i i-site"></span><div class="font-bold">Site occupé</div>
-            </div>
-            <p class="text-white/75 mt-2 text-sm">Logistique anticipée pour limiter l’impact opérationnel.</p>
-          </div>
-          <div class="card ring-gold p-5">
-            <div class="flex items-center gap-3">
-              <span class="i i-shield"></span><div class="font-bold">Conformité</div>
-            </div>
-            <p class="text-white/75 mt-2 text-sm">Alignement ISO 9001/45001 et exigences contractuelles.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- PROCESS -->
-    <section class="py-8 md:py-12" v-reveal>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="section-title text-center">Process projet</h2>
-
-        <div class="mt-8 grid gap-4 lg:grid-cols-6">
-          <div class="step card ring-gold p-5">
-            <div class="step__n">01</div>
-            <div class="font-bold">Analyse</div>
-            <div class="text-white/70 text-sm mt-1">Lecture DCE, risques & variantes.</div>
+    <!-- GC (3D à DROITE) -->
+    <section id="gc" class="py-10 md:py-14">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-6" v-reveal>
+          <h2 class="section-title text-left">Génie civil</h2>
+          <div class="mt-4 card ring-gold p-6 md:p-7">
+            <p class="text-white/80">
+              Infrastructures hydrauliques, soutènements, bassins et ouvrages spéciaux, avec notes de calcul et suivi d’essais.
+            </p>
+            <ul class="mt-4 grid sm:grid-cols-2 gap-2 text-white/80 text-sm">
+              <li class="li-check">Études, notes de calcul & plans</li>
+              <li class="li-check">Phasage précis & logistique de chantier</li>
+              <li class="li-check">Réceptions, essais & PV</li>
+              <li class="li-check">Maintenance & durabilité</li>
+            </ul>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Chiffrer un GC</Link>
+              <Link :href="r('public.projects', {}, false, '/realisations')" class="btn-ghost">Réalisations</Link>
+            </div>
           </div>
-          <div class="step card ring-gold p-5">
-            <div class="step__n">02</div>
-            <div class="font-bold">Métrés</div>
-            <div class="text-white/70 text-sm mt-1">Quantités & chiffrage fiable.</div>
-          </div>
-          <div class="step card ring-gold p-5">
-            <div class="step__n">03</div>
-            <div class="font-bold">Planning</div>
-            <div class="text-white/70 text-sm mt-1">Phasage & jalons réalistes.</div>
-          </div>
-          <div class="step card ring-gold p-5">
-            <div class="step__n">04</div>
-            <div class="font-bold">Exécution</div>
-            <div class="text-white/70 text-sm mt-1">Contrôle qualité & HSE.</div>
-          </div>
-          <div class="step card ring-gold p-5">
-            <div class="step__n">05</div>
-            <div class="font-bold">Réception</div>
-            <div class="text-white/70 text-sm mt-1">Essais, PV & DOE.</div>
-          </div>
-          <div class="step card ring-gold p-5">
-            <div class="step__n">06</div>
-            <div class="font-bold">Suivi</div>
-            <div class="text-white/70 text-sm mt-1">Levée de réserves & garantie.</div>
+        </div>
+        <div class="lg:col-span-6 relative" v-reveal>
+          <div class="split3d gc">
+            <div class="dam"></div>
+            <div class="spill"></div>
+            <div class="tube"></div>
+            <div class="gauge"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CTA 3D -->
+    <!-- CTA -->
     <section class="py-10 md:py-14" v-reveal>
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="card ring-gold p-6 md:p-8 grid lg:grid-cols-3 gap-6 items-center relative overflow-hidden">
@@ -297,16 +205,16 @@ const tab = ref<Tab>('vrd')
 </template>
 
 <style scoped>
-/* Reveal */
+/* ========= Reveal */
 .reveal{ opacity:0; transform: translateY(12px) scale(.985); filter: blur(2px); transition: all .6s cubic-bezier(.2,.8,.2,1) }
 .reveal.is-visible{ opacity:1; transform:none; filter:none }
 
-/* Tokens */
+/* ========= Tokens (cohérents) */
 .card{ position:relative; border-radius:1.1rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); backdrop-filter:blur(10px) }
 .ring-gold{ position:relative }
 .ring-gold::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; z-index:0; pointer-events:none; background:linear-gradient(120deg,rgba(220,193,118,.9),rgba(255,255,255,.18),rgba(220,193,118,.9)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; border:1px solid transparent }
 .section-title{ position:relative; display:block; width:100%; font-weight:800; letter-spacing:-.01em; font-size:clamp(1.5rem,2vw + 1rem,2rem) }
-.section-title::after{ content:""; display:block; height:2px; width:110px; margin:.7rem auto 0; background:linear-gradient(90deg,#dcc176,rgba(253,253,254,.6)); opacity:.85; border-radius:999px }
+.section-title::after{ content:""; display:block; height:2px; width:110px; margin:.7rem 0 0; background:linear-gradient(90deg,#dcc176,rgba(253,253,254,.6)); opacity:.85; border-radius:999px }
 .tag-ghost{ display:inline-flex; align-items:center; gap:.4rem; padding:.3rem .6rem; border-radius:.55rem; font-weight:800; font-size:.75rem; color:#fdfdfe; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.20); box-shadow: inset 0 1px 0 rgba(255,255,255,.25) }
 .chip{ display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .7rem; border-radius:.7rem; color:#fdfdfe; font-weight:600; font-size:.9rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14) }
 .btn-ghost{ display:inline-flex; align-items:center; justify-content:center; padding:.75rem 1.05rem; border-radius:1rem; border:1px solid rgba(255,255,255,.15); color:#fdfdfe; transition:border-color .2s, transform .2s }
@@ -315,46 +223,132 @@ const tab = ref<Tab>('vrd')
 .btn-outline-gold::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background:linear-gradient(120deg,rgba(220,193,118,.9),rgba(255,255,255,.18),rgba(220,193,118,.9)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; border:1px solid transparent }
 .btn-outline-gold:hover{ transform: translateY(-2px) }
 
-/* Hero 3D */
+/* ========= HERO 3D (grid-wave + compas) */
 .hero-ribbon{ position:absolute; left:0; right:0; top:-10px; height:36px; opacity:.45; transform: rotate(-2deg); background: repeating-linear-gradient(135deg,#2a3644 0 18px,#2a3644 18px 28px,#dcc176 28px 46px,#dcc176 46px 56px) }
 .hero-halo{ position:absolute; inset:-40px; border-radius:2rem; filter:blur(36px); opacity:.55; background: radial-gradient(60% 60% at 25% 25%, #dcc176 0%, transparent 60%) }
-.persp{ perspective:1200px; position:relative }
-.platform{ height:12rem; border-radius:1.2rem; background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05)); border:1px solid rgba(255,255,255,.12); transform: rotateX(55deg) rotateZ(-12deg); box-shadow: 0 50px 120px -40px rgba(0,0,0,.6) }
-.platform-cards{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none }
-.platform-cards>div{ position:absolute }
-.iso-card{ height:var(--h); width:var(--w); transform: translateZ(0) rotateX(55deg) rotateZ(-12deg); background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(21,30,39,.55)); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; box-shadow: 0 40px 90px -40px rgba(0,0,0,.55); z-index: var(--z) }
-.iso-card::after{ content:""; position:absolute; inset:-1px; border-radius:12px; padding:1px; background:linear-gradient(120deg,rgba(220,193,118,.8),rgba(255,255,255,.2),rgba(220,193,118,.8)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; opacity:.75 }
-.crane{ position:absolute; right:0; top:-16px; width:72%; filter: drop-shadow(0 6px 30px rgba(0,0,0,.35)) }
-.trolley{ animation: trolley 6s ease-in-out infinite alternate } .hook{ animation: hook 3s ease-in-out infinite alternate }
-@keyframes trolley{ from{ transform: translateX(40px) } to{ transform: translateX(160px) } }
-@keyframes hook{ from{ transform: translateY(0) } to{ transform: translateY(8px) } }
 
-/* Services 3D */
-.card-iso{ transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)); transition: transform .15s ease-out, box-shadow .2s ease; box-shadow:0 40px 120px -40px rgba(0,0,0,.55); border-radius:1rem; padding:1.1rem 1.2rem 1.2rem; background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(21,30,39,.55)); border:1px solid rgba(255,255,255,.12) }
-.illus{ height:120px; position:relative; margin-top:.1rem }
-.iso-vrd .b1,.iso-vrd .b2,.iso-vrd .b3{ position:absolute; border-radius:10px; transform: rotateX(55deg) rotateZ(-12deg); background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(21,30,39,.55)); border:1px solid rgba(255,255,255,.14) }
-.iso-vrd .b1{ width:120px; height:26px; left:6%; bottom:14% } .iso-vrd .b2{ width:100px; height:22px; left:34%; bottom:26% } .iso-vrd .b3{ width:78px; height:18px; left:60%; bottom:38% }
-.iso-bat .core,.iso-bat .slab,.iso-bat .beam{ position:absolute; transform: rotateX(55deg) rotateZ(-12deg); border:1px solid rgba(255,255,255,.14); background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(21,30,39,.55)); border-radius:8px }
-.iso-bat .core{ width:50px; height:70px; left:18%; bottom:16% } .iso-bat .slab{ width:110px; height:12px; left:26%; bottom:28% } .iso-bat .beam{ width:60px; height:8px; left:52%; bottom:38% }
-.iso-gc .dam,.iso-gc .pipe{ position:absolute; transform: rotateX(55deg) rotateZ(-12deg); background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(21,30,39,.55)); border:1px solid rgba(255,255,255,.14); border-radius:10px }
-.iso-gc .dam{ width:120px; height:28px; left:10%; bottom:18% } .iso-gc .pipe{ width:26px; height:26px; left:66%; bottom:34%; border-radius:999px }
+.services3d{
+  position:relative; height:min(28rem, 60vw);
+  display:grid; place-items:center; perspective:1000px; transform-style:preserve-3d;
+  filter: drop-shadow(0 20px 60px rgba(0,0,0,.45));
+}
+.services3d .grid-floor{
+  position:absolute; inset:auto; bottom:-8px; width:94%; height:12rem; border-radius:1.2rem;
+  transform: rotateX(62deg) rotateZ(8deg);
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.09) 0 2px, transparent 2px 12px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 2px, transparent 2px 12px),
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.12);
+}
+.services3d .compass{
+  position:absolute; width:min(22rem, 64%); aspect-ratio:1/1; border-radius:999px;
+  transform: translateZ(80px) rotateX(14deg);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.compass .needle{
+  position:absolute; inset:20% 49% 20% 49%; border-radius:8px; background:#dcc176;
+  transform-origin:center; animation: needle 6s linear infinite;
+  box-shadow: 0 0 16px rgba(220,193,118,.55);
+}
+.compass .n,.compass .e,.compass .s,.compass .w{
+  position:absolute; color:#fdfdfe; font-weight:900; font-size:.75rem; opacity:.8;
+}
+.compass .n{ top:6%; left:50%; transform:translateX(-50%) }
+.compass .s{ bottom:6%; left:50%; transform:translateX(-50%) }
+.compass .e{ right:6%; top:50%; transform:translateY(-50%) }
+.compass .w{ left:6%;  top:50%; transform:translateY(-50%) }
 
-/* Process */
-.step{ position:relative; overflow:hidden }
-.step::after{ content:""; position:absolute; inset:-1px; pointer-events:none; border-radius:inherit; background: radial-gradient(60% 60% at 20% 20%, rgba(220,193,118,.15), transparent 60%) }
-.step__n{ font-weight:900; color:#dcc176; margin-bottom:.35rem }
+.services3d .wave{
+  position:absolute; inset:0; transform: translateZ(110px) rotateX(14deg);
+  display:grid; place-items:center; pointer-events:none;
+}
+.services3d .wave span{
+  --i:0; position:absolute; width:70%; height:70%; border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+  animation: ring 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .35s);
+}
+.services3d .scan{
+  position:absolute; inset:10%; border-radius:999px;
+  background: conic-gradient(from 0deg, rgba(220,193,118,.0) 0 85%, rgba(220,193,118,.6) 92%, rgba(220,193,118,.0) 100%);
+  transform: translateZ(130px) rotateX(14deg);
+  animation: sweep 6s cubic-bezier(.2,.8,.2,1) infinite;
+  mix-blend-mode: screen;
+}
 
-/* Icônes (mask) */
-.i{ width:18px; height:18px; display:inline-block; border-radius:5px; background: rgba(255,255,255,.12) }
-.i-check{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-plan{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M3 3h13v18H3zM16 7h5v14H16zM6 6h7v2H6zM6 10h7v2H6zM6 14h7v2H6z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M3 3h13v18H3zM16 7h5v14H16zM6 6h7v2H6zM6 10h7v2H6zM6 14h7v2H6z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-helmet{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 3a9 9 0 00-9 9v3h18v-3a9 9 0 00-9-9zM3 18h18v2H3z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 3a9 9 0 00-9 9v3h18v-3a9 9 0 00-9-9zM3 18h18v2H3z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-time{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11H7v-2h4V6h2v7z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11H7v-2h4V6h2v7z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-site{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-shield{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2l8 4v6c0 5-3.5 9.74-8 10-4.5-.26-8-5-8-10V6l8-4z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2l8 4v6c0 5-3.5 9.74-8 10-4.5-.26-8-5-8-10V6l8-4z"/></svg>') center/contain no-repeat; background:#dcc176 }
+/* ========= SPLIT 3D (alternance) */
+.split3d{ position:relative; height:min(22rem, 55vw); perspective:900px; transform-style:preserve-3d }
+.split3d .floor{
+  position:absolute; inset:auto; bottom:-10px; width:92%; height:10rem; border-radius:1rem;
+  transform: rotateX(60deg) rotateZ(-10deg);
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.08) 0 2px, transparent 2px 12px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 2px, transparent 2px 12px),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.12);
+}
 
-/* Utils */
+/* VRD scene */
+.split3d.vrd .road{
+  position:absolute; border-radius:10px; transform: rotateX(58deg) rotateZ(-12deg);
+  background:linear-gradient(160deg, rgba(255,255,255,.12), rgba(21,30,39,.55));
+  border:1px solid rgba(255,255,255,.14); box-shadow: 0 40px 90px -40px rgba(0,0,0,.55);
+}
+.split3d.vrd .road.a{ width:220px; height:36px; left:6%;  bottom:14% }
+.split3d.vrd .road.b{ width:180px; height:28px; left:44%; bottom:28% }
+.split3d.vrd .manhole{
+  position:absolute; width:28px; height:28px; left:34%; bottom:34%; border-radius:999px;
+  transform: rotateX(58deg) rotateZ(-12deg); background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);
+}
+.split3d.vrd .pipe{
+  position:absolute; width:18px; height:18px; left:66%; bottom:40%; border-radius:999px;
+  transform: rotateX(58deg) rotateZ(-12deg); background:#dcc176;
+  box-shadow:0 0 0 3px rgba(220,193,118,.25), 0 0 18px rgba(220,193,118,.55);
+}
+
+/* BAT scene */
+.split3d.bat .slab,.split3d.bat .core,.split3d.bat .beam,.split3d.bat .frame{
+  position:absolute; transform: rotateX(58deg) rotateZ(10deg);
+  background:linear-gradient(160deg, rgba(255,255,255,.12), rgba(21,30,39,.55));
+  border:1px solid rgba(255,255,255,.14); border-radius:10px;
+}
+.split3d.bat .slab{ width:250px; height:16px; left:16%; bottom:18% }
+.split3d.bat .core{ width:68px;  height:120px; left:22%; bottom:28% }
+.split3d.bat .beam{ width:150px; height:10px; left:40%; bottom:42% }
+.split3d.bat .frame{
+  width:90px; height:90px; left:56%; bottom:32%; border-radius:12px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+/* GC scene */
+.split3d.gc .dam,.split3d.gc .spill,.split3d.gc .tube,.split3d.gc .gauge{
+  position:absolute; transform: rotateX(58deg) rotateZ(-10deg);
+  background:linear-gradient(160deg, rgba(255,255,255,.12), rgba(21,30,39,.55));
+  border:1px solid rgba(255,255,255,.14); border-radius:12px;
+}
+.split3d.gc .dam{ width:240px; height:34px; left:10%; bottom:20% }
+.split3d.gc .spill{ width:120px; height:22px; left:46%; bottom:32%; border-radius:10px }
+.split3d.gc .tube{ width:30px; height:30px; left:74%; bottom:40%; border-radius:999px; background:#dcc176; box-shadow:0 0 0 3px rgba(220,193,118,.25), 0 0 18px rgba(220,193,118,.55) }
+.split3d.gc .gauge{
+  width:70px; height:70px; left:60%; bottom:22%; border-radius:999px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* ========= Lists */
+.li-check{ position:relative; padding-left:1.2rem }
+.li-check::before{
+  content:""; position:absolute; left:0; top:.25rem; width:.85rem; height:.85rem; border-radius:.3rem;
+  background:#dcc176; -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') center/contain no-repeat; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') center/contain no-repeat;
+}
+
+/* ========= Animations */
+@keyframes needle { to{ transform: rotate(360deg) } }
+@keyframes ring   { 0%,100%{ transform: scale(1) } 50%{ transform: scale(1.06) } }
+@keyframes sweep  { to{ transform: translateZ(130px) rotateX(14deg) rotateZ(360deg) } }
+
+/* ========= Utils */
 .text-bk-gold{ color:#dcc176 }
-.text-bk-night{ color:#0f141a }
-.bg-bk-gold{ background:#dcc176 }
 </style>
