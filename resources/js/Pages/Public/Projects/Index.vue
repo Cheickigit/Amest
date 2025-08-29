@@ -73,7 +73,7 @@ const filtered = computed(()=> selCat.value==='Tous' ? list.value : list.value.f
               <span class="b b4"></span>
             </div>
             <div class="medal">
-              <span class="ring"></span><span class="coin">BK</span>
+              <span class="ring"></span><span class="coin">BKOC</span>
             </div>
           </div>
         </div>
