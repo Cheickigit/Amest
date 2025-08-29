@@ -4,7 +4,6 @@ window.axios = axios
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 window.axios.defaults.withCredentials = true
 
-const token = document.head.querySelector('meta[name="csrf-token"]')
-if (token) {
-  window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content
-}
+// Utiliser le cookie XSRF-TOKEN de Laravel (mis à jour automatiquement)
+window.axios.defaults.xsrfCookieName = 'XSRF-TOKEN'
+window.axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN'

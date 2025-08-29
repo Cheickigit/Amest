@@ -12,35 +12,46 @@ type PageProps = {
   user: { name: string; email: string; roles: string[]; permissions: string[]; last_login_at?: string|null; last_login_ip?: string|null }
   sessions: SessionItem[]
   logs: LogItem[]
-  flash?: { success?: string; error?: string }
+  flash?: { success?: string; error?: string; info?: string }
 }
 
 const page = usePage<PageProps>()
 const props = computed(() => page.props)
 const route = (name: string, params?: any) => ziggyRoute(name, params, false, (window as any).Ziggy)
 
-// -------- change password form
+/* ========= Email ========= */
+const mail = useForm({
+  email: page.props.user.email ?? '',
+  current_password: '',
+})
+const changeEmail = () => {
+  mail.post(route('admin.account.email.update'), {
+    preserveScroll: true,
+    onSuccess: () => { mail.current_password = '' },
+  })
+}
+
+/* ========= Password ========= */
 const pwd = useForm({ current_password: '', password: '', password_confirmation: '' })
 const changePassword = () => {
   pwd.post(route('admin.account.password.update'), { preserveScroll: true, onSuccess: () => pwd.reset() })
 }
 
-// -------- logout others
+/* ========= Logout others ========= */
 const sec = useForm({ password: '' })
 const logoutOthers = () => sec.post(route('admin.account.sessions.logout_others'), { preserveScroll: true, onSuccess: () => sec.reset() })
 
-// -------- revoke one session
+/* ========= Revoke single session ========= */
 const revoking = ref<string|null>(null)
 const revoke = (id: string) => {
   revoking.value = id
   window.setTimeout(() => {
-    // delete
     const form = useForm({})
     form.delete(route('admin.account.sessions.revoke', { id }), { preserveScroll: true, onFinish: () => revoking.value = null })
   }, 0)
 }
 
-// Helpers (UA résumé)
+/* ========= Helpers ========= */
 const shortUA = (ua?: string|null) => {
   if (!ua) return 'N/A'
   const m = ua.match(/(Chrome|Firefox|Safari|Edg|Opera)\/[\d.]+/i)?.[0] ?? ua.split(' ').slice(0,2).join(' ')
@@ -51,13 +62,19 @@ const shortUA = (ua?: string|null) => {
 
 <template>
   <div class="space-y-6">
-    <div v-if="$page.props.flash?.success" class="rounded-lg bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30 px-3 py-2">
-      {{ $page.props.flash.success }}
-    </div>
-    <div v-if="$page.props.flash?.error" class="rounded-lg bg-red-500/10 text-red-300 ring-1 ring-red-500/30 px-3 py-2">
-      {{ $page.props.flash.error }}
-    </div>
+    <!-- Flash messages -->
+   <!-- APRÈS -->
+<div v-if="props.flash?.success" class="rounded-lg bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30 px-3 py-2">
+  {{ props.flash.success }}
+</div>
+<div v-if="props.flash?.error" class="rounded-lg bg-red-500/10 text-red-300 ring-1 ring-red-500/30 px-3 py-2">
+  {{ props.flash.error }}
+</div>
+<div v-if="props.flash?.info" class="rounded-lg bg-white/10 text-white/80 ring-1 ring-white/15 px-3 py-2">
+  {{ props.flash.info }}
+</div>
 
+    <!-- Profil + Sessions -->
     <div class="grid gap-6 lg:grid-cols-3">
       <!-- Profil -->
       <div class="panel">
@@ -107,7 +124,10 @@ const shortUA = (ua?: string|null) => {
             </thead>
             <tbody class="divide-y divide-white/10">
               <tr v-for="s in props.sessions" :key="s.id">
-                <td class="py-2">{{ shortUA(s.agent) }} <span v-if="s.is_current" class="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-bk-gold/20 text-bk-gold">courante</span></td>
+                <td class="py-2">
+                  {{ shortUA(s.agent) }}
+                  <span v-if="s.is_current" class="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-bk-gold/20 text-bk-gold">courante</span>
+                </td>
                 <td class="py-2">{{ s.ip ?? '—' }}</td>
                 <td class="py-2">{{ s.last_activity }}</td>
                 <td class="py-2">
@@ -139,9 +159,36 @@ const shortUA = (ua?: string|null) => {
       </div>
     </div>
 
-    <!-- Mot de passe + Logs -->
+    <!-- Email + Password + Logs -->
     <div class="grid gap-6 lg:grid-cols-3">
-      <!-- Changer de mot de passe -->
+      <!-- Changer d’adresse e-mail -->
+      <div class="panel">
+        <div class="panel-title">Changer l’adresse e-mail</div>
+        <form class="mt-3 grid gap-3" @submit.prevent="changeEmail">
+          <div>
+            <label class="text-xs text-white/60">Nouvelle adresse e-mail</label>
+            <input v-model="mail.email" type="email" required
+                   class="mt-1 w-full h-10 rounded-lg bg-white/[.06] ring-1 ring-white/10 px-3 text-sm outline-none focus:ring-bk-gold/50"
+                   placeholder="votre.nouvel@email.tld" />
+            <div v-if="mail.errors.email" class="text-xs text-red-300 mt-1">{{ mail.errors.email }}</div>
+          </div>
+          <div>
+            <label class="text-xs text-white/60">Mot de passe actuel</label>
+            <input v-model="mail.current_password" type="password" required
+                   class="mt-1 w-full h-10 rounded-lg bg-white/[.06] ring-1 ring-white/10 px-3 text-sm outline-none focus:ring-bk-gold/50" />
+            <div v-if="mail.errors.current_password" class="text-xs text-red-300 mt-1">{{ mail.errors.current_password }}</div>
+          </div>
+          <div class="text-[11px] text-white/50 -mt-1">
+            ⚠️ La vérification e-mail sera réinitialisée si activée.
+          </div>
+          <button class="h-10 px-3 rounded-lg bg-bk-gold text-bk-night font-semibold"
+                  :disabled="mail.processing">
+            {{ mail.processing ? 'En cours…' : 'Mettre à jour l’e-mail' }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Changer le mot de passe -->
       <div class="panel">
         <div class="panel-title">Changer le mot de passe</div>
         <form class="mt-3 grid gap-3" @submit.prevent="changePassword">
@@ -171,7 +218,7 @@ const shortUA = (ua?: string|null) => {
       </div>
 
       <!-- Journal des connexions -->
-      <div class="panel lg:col-span-2">
+      <div class="panel lg:col-span-3">
         <div class="panel-title">Historique de connexion</div>
         <div class="mt-3 overflow-x-auto">
           <table class="min-w-full text-sm">
