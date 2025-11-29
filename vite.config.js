@@ -18,4 +18,10 @@ export default defineConfig({
       },
     }),
   ],
+  // AJOUTEZ CETTE SECTION :
+  server: {
+    host: 'localhost',
+    port: 5174, // ← Port spécifique
+    strictPort: true, // ← Empêche Vite de changer de port si 5174 est occupé
+  },
 });

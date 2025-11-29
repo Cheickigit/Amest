@@ -105,7 +105,7 @@ Route::get('/actualites/{slugOrId}', function (string $slugOrId) {
 })->name('public.posts.show');
 
 /* -------- Pages institutionnelles -------- */
-Route::get('/a-propos', fn () => Inertia::render('public/About', [
+Route::get('/a-propos', fn () => Inertia::render('Public/About', [
     'stats' => ['roads_km'=>120, 'buildings'=>40, 'years'=>1],
 ]))->name('public.about');
 

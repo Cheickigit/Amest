@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
@@ -18,15 +19,7 @@ class DashboardController extends Controller
         $human = fn ($ts) => $ts ? Carbon::parse($ts)->locale(app()->getLocale())->diffForHumans() : '';
 
         // ----- PROJETS -----
-        $hasProjects = DB::selectOne("
-            select exists (
-              select 1 from pg_class c, pg_namespace n
-              where n.nspname = current_schema()
-                and c.relname = 'projects'
-                and c.relkind in ('r','p')
-                and n.oid = c.relnamespace
-            ) as e
-        ")->e ?? false;
+        $hasProjects = Schema::hasTable('projects');
 
         $projects = [
             'total'    => $hasProjects ? (int) DB::table('projects')->count() : 0,
@@ -47,15 +40,7 @@ class DashboardController extends Controller
         ];
 
         // ----- LEADS (QUOTES) -----
-        $hasQuotes = DB::selectOne("
-            select exists (
-              select 1 from pg_class c, pg_namespace n
-              where n.nspname = current_schema()
-                and c.relname = 'quotes'
-                and c.relkind in ('r','p')
-                and n.oid = c.relnamespace
-            ) as e
-        ")->e ?? false;
+        $hasQuotes = Schema::hasTable('quotes');
 
         $leads = ['total'=>0,'new'=>0,'read'=>0,'latest'=>[]];
         if ($hasQuotes) {
@@ -74,15 +59,7 @@ class DashboardController extends Controller
         }
 
         // ----- POSTS -----
-        $hasPosts = DB::selectOne("
-            select exists (
-              select 1 from pg_class c, pg_namespace n
-              where n.nspname = current_schema()
-                and c.relname = 'posts'
-                and c.relkind in ('r','p')
-                and n.oid = c.relnamespace
-            ) as e
-        ")->e ?? false;
+        $hasPosts = Schema::hasTable('posts');
 
         $cms = [
             'drafts' => $hasPosts ? (int) DB::table('posts')->where('status','brouillon')->count() : 0,
