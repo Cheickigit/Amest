@@ -24,17 +24,18 @@ Route::get('/', function () {
         ->where('status', 'publié')
         ->latest()
         ->take(6)
-        ->get(['id','title','slug','city','category','status','cover_image','media']);
+        ->get(['id','title','slug','city','category','status','cover_image']); // Retirer 'media'
 
     $gridProjects = Project::query()
         ->where('status', 'publié')
         ->latest()
         ->take(9)
-        ->get(['id','title','slug','city','category','status','cover_image','media']);
+        ->get(['id','title','slug','city','category','status','cover_image']); // Retirer 'media'
 
     // Articles
     $posts = Post::query()
         ->where('status', 'publié')
+        ->where('type', 'article') // Ajouter cette ligne
         ->orderByDesc('published_at')
         ->take(6)
         ->get(['id','title','slug','excerpt','cover_image','published_at']);
@@ -56,7 +57,7 @@ Route::get('/realisations', function () {
     return Inertia::render('Public/Projects/Index', [
         'items' => Project::where('status','publié')
             ->latest()
-            ->paginate(9, ['id','slug','title','category','city','cover_image','media','excerpt']),
+            ->paginate(9, ['id','slug','title','category','city','cover_image','excerpt']), // Retirer 'media'
     ]);
 })->name('public.projects');
 
@@ -73,16 +74,43 @@ Route::get('/realisations/{slugOrId}', function (string $slugOrId) {
     return Inertia::render('Public/Projects/Show', [
         'item'    => $project->only([
             'id','slug','title','category','city','client','year',
-            'cover_image','excerpt','body','media'
+            'cover_image','excerpt','body' // Retirer 'media'
         ]),
         'related' => $related,
     ]);
 })->name('public.projects.show');
 
-/* -------- Actualités (public) -------- */
+/* -------- Annonces & Archives -------- */
+Route::get('/annonces-archives', function () {
+    $announcements = Post::query()
+        ->where('status', 'publié')
+        ->where('type', 'annonce')
+        ->orderByDesc('published_at')
+        ->paginate(12, ['id','slug','title','excerpt','published_at','cover_image','tags','important']);
+
+    $archives = Post::query()
+        ->where('status', 'publié')
+        ->where('type', 'annonce')
+        ->where('published_at', '<', now()->subMonths(6))
+        ->orderByDesc('published_at')
+        ->take(20)
+        ->get(['id','slug','title','published_at','important']);
+
+    return Inertia::render('Public/Announcements/Index', [
+        'announcements' => $announcements,
+        'archives' => $archives,
+        'stats' => [
+            'total' => Post::where('type', 'annonce')->where('status', 'publié')->count(),
+            'important_count' => Post::where('type', 'annonce')->where('important', true)->count(),
+        ]
+    ]);
+})->name('public.announcements');
+
+/* -------- Actualités (Articles) -------- */
 Route::get('/actualites', function () {
     return Inertia::render('Public/Posts/Index', [
         'items' => Post::where('status','publié')
+            ->where('type', 'article') // Ajouter cette ligne
             ->orderByDesc('published_at')
             ->paginate(9, ['id','slug','title','excerpt','published_at','cover_image','tags']),
     ]);
@@ -109,31 +137,37 @@ Route::get('/a-propos', fn () => Inertia::render('Public/About', [
     'stats' => ['roads_km'=>120, 'buildings'=>40, 'years'=>1],
 ]))->name('public.about');
 
-Route::get('/services', fn () => Inertia::render('public/Services', [
+Route::get('/equipe', fn () => redirect()->route('public.announcements'))->name('public.team'); // Redirection
+
+Route::get('/services', fn () => Inertia::render('Public/Services', [
     'groups' => [
         ['title' => 'Voirie & Réseaux (VRD)', 'items' => ['Chaussées souples & rigides', 'Assainissement pluvial & EU', 'Ouvrages hydrauliques', 'Signalisation & sécurité'], 'badge' => 'VRD'],
         ['title' => 'Bâtiments', 'items' => ['Structure béton & charpente', 'Cloisons & finitions premium', 'Lots techniques (CVC, CFO/CFA)', 'BIM exé & DOE'], 'badge' => 'BAT'],
-        ['title' => 'Génie civil', 'items' => ['Ouvrages d’art', 'Soutènements & pieux', 'Bassins & réservoirs', 'Études d’exécution & phasage'], 'badge' => 'GC'],
-        ['title' => 'Immobilier', 'items' => ['Promotion & AMO', 'Logements / tertiaire', 'Retail & parcs d’activités', 'Pilotage & OPC'], 'badge' => 'IMO'],
+        ['title' => 'Génie civil', 'items' => ['Ouvrages d\'art', 'Soutènements & pieux', 'Bassins & réservoirs', 'Études d\'exécution & phasage'], 'badge' => 'GC'],
+        ['title' => 'Immobilier', 'items' => ['Promotion & AMO', 'Logements / tertiaire', 'Retail & parcs d\'activités', 'Pilotage & OPC'], 'badge' => 'IMO'],
         ['title' => 'Rénovation & Réhabilitation', 'items' => ['Renforcement structurel', 'Mise aux normes HSE', 'Réhabilitation site occupé', 'Finitions haut de gamme'], 'badge' => 'REN'],
         ['title' => 'Ouvrages hydrauliques', 'items' => ['Canaux & dalots', 'Stations de pompage', 'Buses & microtunnels', 'Étanchéité & protections'], 'badge' => 'HYD'],
     ],
 ]))->name('public.services');
 
 Route::get('/appels-d-offres', fn () => Inertia::render('public/Rfp'))->name('public.rfp');
-Route::get('/contact', fn () => Inertia::render('public/Contact', [
+Route::get('/contact', fn () => Inertia::render('Public/Contact', [
     'contact' => [
-        'phone_display' => '+212 7 70 55 60 21',
-        'phone_href'    => 'tel:+212770556021',
-        'whatsapp_href' => 'https://wa.me/212770556021',
-        'email'         => 'contact@bkoconstruction.com',
-        'city'          => 'Tanger, Maroc',
-        'hours'         => 'Lun–Sam : 8h30 – 18h',
-        'plus_code'     => 'P5H4+2J3 Tanger, Maroc',
+        'phone_display' => '+216 24 282 332',
+        'phone_href'    => 'tel:+21624282332',
+        'whatsapp_href' => 'https://wa.me/21624282332?text=Bonjour%20AMEST-Sahel%2C%20je%20souhaite%20avoir%20plus%20d%27informations',
+        'email'         => 'amestsahel04@gmail.com',
+        'city'          => 'Tunisie - Région du Sahel',
+        'hours'         => 'Lun–Ven : 9h – 17h',
+        'social_links'  => [
+            'facebook'  => 'https://facebook.com/amestsahel',
+            'instagram' => 'https://instagram.com/amest_sahel',
+            'youtube'   => 'https://youtube.com/amest-talk'
+        ]
     ],
 ]))->name('public.contact');
 
-/* Alias CTA “Demander un devis” */
+/* Alias CTA "Demander un devis" */
 Route::get('/devis', fn () => redirect()->route('public.rfp'))->name('public.quote');
 
 /* ===================== AUTH + PORTAILS ===================== */

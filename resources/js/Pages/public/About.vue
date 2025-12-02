@@ -16,53 +16,56 @@ function r(name: string, params?: any, absolute = false, fallback: string = '#')
 
 /* Données AMEST-Sahel - ORGANISÉES PAR HIÉRARCHIE AVEC PHOTOS CORRECTES */
 const teamMembers = ref([
-  // BUREAU EXÉCUTIF
+  // Présidence
   {
     name: 'Adama Pangolo DAOU',
     role: 'Président',
     studies: 'Étudiant en Génie civil, Pont et chaussée',
     email: 'adamadaou650@gmail.com',
-    photo: '/assets/team/president-adama.jpg',
+    photo: '/assets/team/President Adama.jpg',
     hierarchy: 1,
-    category: 'Bureau Exécutif'
+    category: 'Présidence'
   },
-  {
+
+  // SECRÉTARIAT GÉNÉRAL
+
+   {
     name: 'Aly TOGO',
     role: 'Secrétaire général',
     studies: 'Étudiant en génie électrique',
     email: '',
-    photo: '/assets/team/secretaire-aly.jpg',
+    photo: '/assets/team/Aly togo.jpg',
     hierarchy: 2,
-    category: 'Bureau Exécutif'
+    category: 'Secrétariat Général'
   },
-  {
-    name: 'Seybou DABO',
-    role: 'Trésorier',
-    studies: 'Étudiant en génie électrique',
-    email: 'seyboudabo7136@gmail.com',
-    photo: '/assets/team/tresorier-seybou.jpg',
-    hierarchy: 3,
-    category: 'Bureau Exécutif'
-  },
-
-  // SECRÉTARIAT GÉNÉRAL
   {
     name: 'Seydou Fily MALLE',
     role: 'Adjoint Secrétaire général',
     studies: 'Étudiant en IA et Data Science',
     email: 'seydoufilymalle@gmail.com',
-    photo: '/assets/team/adj-secretaire-seydou.jpg',
+    photo: '/assets/team/Seydou adj SG.jpg',
     hierarchy: 4,
     category: 'Secrétariat Général'
   },
 
   // TRÉSORERIE
+
+  {
+    name: 'Seybou DABO',
+    role: 'Trésorier',
+    studies: 'Étudiant en génie électrique',
+    email: 'seyboudabo7136@gmail.com',
+    photo: '/assets/team/Seydou dabo tréso.jpg',
+    hierarchy: 3,
+    category: 'Trésorerie'
+  },
+
   {
     name: 'Abdrahamane SANGARE',
     role: 'Adjoint Trésorier',
     studies: 'Étudiant en finance',
     email: 'abdrahamanesangare006@gmail.com',
-    photo: '/assets/team/adj-tresorier-abdrahamane.jpg',
+    photo: '/assets/team/Abdramane Sangaré.jpg',
     hierarchy: 5,
     category: 'Trésorerie'
   },
@@ -73,7 +76,7 @@ const teamMembers = ref([
     role: 'Chargé de l\'organisation',
     studies: 'Étudiant en comptabilité contrôle audit',
     email: 'lassine.coulibaly001@gmail.com',
-    photo: '/assets/team/organisation-lassine.jpg',
+    photo: '/assets/team/Lassine Coulibaly.jpg',
     hierarchy: 6,
     category: 'Commission Organisation'
   },
@@ -82,36 +85,28 @@ const teamMembers = ref([
     role: 'Adjoint Chargé de l\'organisation',
     studies: 'Étudiant en génie mécanique',
     email: '',
-    photo: '/assets/team/adj-organisation-kassim.jpg',
+    photo: '/assets/team/Abdoul kassim.jpg',
     hierarchy: 7,
     category: 'Commission Organisation'
   },
-  {
-    name: 'Kadidia BAH',
-    role: 'Adjoint Chargé de l\'organisation',
-    studies: 'Étudiante en génie électrique',
-    email: 'kadidiabah70@gmail.com',
-    photo: '/assets/team/adj-organisation-kadidia.jpg',
-    hierarchy: 8,
-    category: 'Commission Organisation'
-  },
+
 
   // COMMISSION RELATIONS EXTÉRIEURES
   {
     name: 'Aoua H DIALLO',
-    role: 'Chargé des relations extérieures',
+    role: 'Chargé des Relations Extérieures',
     studies: 'Étudiante en Génie civil',
     email: 'dialloaoua66@gmail.com',
-    photo: '/assets/team/relations-aoua.jpg',
+    photo: '/assets/team/chargé des aff extérieurs.jpg',
     hierarchy: 9,
     category: 'Commission Relations Extérieures'
   },
   {
     name: 'Hawa DIARRA',
-    role: 'Adjoint Chargé des relations extérieures',
+    role: 'Adjoint Chargé des Relations Rxtérieures',
     studies: 'Étudiante en Marketing Digital',
     email: 'hsoufianadiarra@gmail.com',
-    photo: '/assets/team/adj-relations-hawa.jpg',
+    photo: '/assets/team/adj relations exterieurs.jpg',
     hierarchy: 10,
     category: 'Commission Relations Extérieures'
   },
@@ -122,8 +117,17 @@ const teamMembers = ref([
     role: 'Chargé de la communication',
     studies: 'Étudiante en comptabilité contrôle audit',
     email: 'massaoudacamara2003@gmail.com',
-    photo: '/assets/team/communication-massaouda.jpg',
+    photo: '/assets/team/Massaoudou camara COM.jpg',
     hierarchy: 11,
+    category: 'Commission Communication'
+  },
+   {
+    name: 'Kadidia BAH',
+    role: 'Adjoint Chargé de la Communication',
+    studies: 'Étudiante en génie électrique',
+    email: 'kadidiabah70@gmail.com',
+    photo: '/assets/team/Kadidia bah.jpg',
+    hierarchy: 8,
     category: 'Commission Communication'
   },
 
@@ -133,7 +137,7 @@ const teamMembers = ref([
     role: 'Chargé des affaires socioculturelles',
     studies: 'Étudiant en Marketing et Communication',
     email: 'talhoussouna73@gmail.com',
-    photo: '/assets/team/socioculturel-alhoussouna.jpg',
+    photo: '/assets/team/Alhoussouna.jpg',
     hierarchy: 12,
     category: 'Commission Affaires Socioculturelles'
   }
@@ -141,7 +145,7 @@ const teamMembers = ref([
 
 // Grouper les membres par catégorie
 const groupedTeam = computed(() => {
-  const groups = {}
+  const groups: Record<string, any[]> = {}
   teamMembers.value.forEach(member => {
     if (!groups[member.category]) {
       groups[member.category] = []
@@ -164,7 +168,7 @@ const activities = ref([
     date: '22 Février 2025',
     location: 'Friguia',
     description: 'Excursion éducative et détente au parc animalier',
-    image: '/assets/activities/zoo-friguia-2025.jpg'
+    image: '/assets/activities/Friguia1.jpg'
   },
   {
     title: 'Rupture de jeûne Sousse',
@@ -241,6 +245,28 @@ const handleImageError = (event: Event, fallbackText: string) => {
     avatar.className = 'w-full h-full bg-gradient-to-br from-red-500 to-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-lg'
     avatar.textContent = fallbackText.split(' ').map(n => n[0]).join('')
     parent.appendChild(avatar)
+  }
+}
+
+// Fonction simplifiée pour les erreurs d'images d'activités
+const handleActivityImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  const parent = target.parentElement
+  if (parent) {
+    target.style.display = 'none'
+    parent.className = 'h-48 bg-gradient-to-br from-red-500 to-yellow-400 flex items-center justify-center'
+    parent.innerHTML = '<span class="text-white text-4xl">📅</span>'
+  }
+}
+
+// Fonction simplifiée pour les erreurs d'images des anciens présidents
+const handlePresidentImageError = (event: Event, presidentName: string) => {
+  const target = event.target as HTMLImageElement
+  const parent = target.parentElement
+  if (parent) {
+    target.style.display = 'none'
+    parent.className = 'w-full h-full bg-gradient-to-br from-red-500 to-yellow-400 rounded-full flex items-center justify-center text-white font-bold'
+    parent.textContent = presidentName.split(' ').map(n => n[0]).join('')
   }
 }
 </script>
@@ -366,66 +392,74 @@ const handleImageError = (event: Event, fallbackText: string) => {
       </div>
     </section>
 
-    <!-- ÉQUIPE ORGANISÉE PAR HIÉRARCHIE -->
-    <section class="py-16 bg-white">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12" v-reveal>
-          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Notre <span class="text-green-600">Équipe</span>
-          </h2>
-          <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-            L'organisation hiérarchique de notre bureau exécutif
-          </p>
-        </div>
 
-        <!-- Bureau Exécutif -->
-        <div v-for="(members, category) in groupedTeam" :key="category" class="mb-12">
-          <div class="text-center mb-8" v-reveal>
-            <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              {{ category }}
-            </h3>
-            <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-green-500 mx-auto rounded-full"></div>
-          </div>
+<!-- ÉQUIPE ORGANISÉE PAR HIÉRARCHIE -->
+<section class="py-16 bg-white team-section">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12" v-reveal>
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        Notre <span class="text-green-600">Équipe</span>
+      </h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        L'organisation hiérarchique de notre bureau exécutif
+      </p>
+    </div>
 
-          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div
-              v-for="(member, index) in members"
-              :key="index"
-              v-reveal
-              class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-red-300 group member-card"
-            >
-              <!-- Photo du membre -->
-              <div class="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-500 to-yellow-400 p-1 group-hover:from-red-600 group-hover:to-yellow-500 transition-all duration-300">
-                <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                  <img
-                    :src="member.photo"
-                    :alt="`Photo de ${member.name}`"
-                    class="w-full h-full object-cover rounded-full"
-                    @error="(e) => handleImageError(e, member.name)"
-                  >
-                </div>
+    <!-- Bureau Exécutif -->
+    <div v-for="(members, category) in groupedTeam" :key="category" class="mb-12">
+      <div class="text-center mb-8" v-reveal>
+        <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          {{ category }}
+        </h3>
+        <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-green-500 mx-auto rounded-full"></div>
+      </div>
+
+      <!-- Conteneur centré -->
+      <div class="flex justify-center">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
+          <div
+            v-for="(member, index) in members"
+            :key="index"
+            v-reveal
+            class="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-red-300 group member-card flex flex-col items-center"
+          >
+            <!-- Photo du membre - ROGNÉE ET CENTRÉE -->
+            <div class="member-photo-container">
+              <div class="member-image-wrapper">
+                <img
+                  :src="member.photo"
+                  :alt="`Photo de ${member.name}`"
+                  class="member-photo"
+                  @error="(e) => handleImageError(e, member.name)"
+                />
               </div>
+            </div>
 
-              <!-- Informations du membre -->
-              <h3 class="font-bold text-gray-900 text-lg mb-1">{{ member.name }}</h3>
-              <p class="text-red-600 font-semibold text-sm mb-2">{{ member.role }}</p>
-              <p class="text-gray-600 text-sm mb-3">{{ member.studies }}</p>
+            <!-- Informations du membre -->
+            <div class="flex-1 flex flex-col items-center">
+              <h3 class="font-bold text-gray-900 text-lg mb-1 text-center">{{ member.name }}</h3>
+              <p class="text-red-600 font-semibold text-sm mb-2 text-center">{{ member.role }}</p>
+              <p class="text-gray-600 text-sm mb-3 text-center">{{ member.studies }}</p>
 
               <!-- Email -->
-              <a
-                v-if="member.email"
-                :href="`mailto:${member.email}`"
-                class="inline-flex items-center text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
-              >
-                <span class="mr-1">📧</span>
-                {{ member.email }}
-              </a>
-              <div v-else class="h-5"></div>
+              <div class="mt-auto">
+                <a
+                  v-if="member.email"
+                  :href="`mailto:${member.email}`"
+                  class="inline-flex items-center text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
+                >
+                  <span class="mr-1">📧</span>
+                  {{ member.email }}
+                </a>
+                <div v-else class="h-5"></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
     <!-- ACTIVITÉS AVEC PHOTOS -->
     <section class="py-16 bg-gradient-to-br from-green-50 to-yellow-50">
@@ -455,15 +489,7 @@ const handleImageError = (event: Event, fallbackText: string) => {
                 :src="activity.image"
                 :alt="`Photo de ${activity.title}`"
                 class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                @error="(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.className = 'h-48 bg-gradient-to-br from-red-500 to-yellow-400 flex items-center justify-center';
-                    parent.innerHTML = '<span class=\"text-white text-4xl\">📅</span>';
-                  }
-                }"
+                @error="handleActivityImageError"
               >
             </div>
 
@@ -506,15 +532,7 @@ const handleImageError = (event: Event, fallbackText: string) => {
                     :src="president.photo"
                     :alt="`Photo de ${president.name}`"
                     class="w-full h-full object-cover"
-                    @error="(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const parent = target.parentElement;
-                      if (parent) {
-                        parent.className = 'w-full h-full bg-gradient-to-br from-red-500 to-yellow-400 rounded-full flex items-center justify-center text-white font-bold';
-                        parent.textContent = president.name.split(' ').map(n => n[0]).join('');
-                      }
-                    }"
+                    @error="(e) => handlePresidentImageError(e, president.name)"
                   >
                 </div>
               </div>
@@ -589,4 +607,71 @@ const handleImageError = (event: Event, fallbackText: string) => {
   transform: translateY(-3px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
 }
+
+.team-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.member-photo-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 1.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.member-photo-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #dc2626 0%, #d97706 50%, #059669 100%);
+  z-index: 0;
+  border-radius: 50%;
+}
+
+.member-photo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%; /* Rogne pour montrer le visage */
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.member-card:hover .member-photo {
+  transform: scale(1.05);
+}
+
+/* Pour forcer le rognage des visages */
+.member-image-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Centrage de toute la section équipe */
+.team-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Responsive pour petits écrans */
+@media (max-width: 768px) {
+  .member-photo-container {
+    width: 120px;
+    height: 120px;
+  }
+}
+
 </style>

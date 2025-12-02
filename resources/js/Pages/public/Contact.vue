@@ -74,16 +74,16 @@ const vReveal = {
             Entrons en <span class="text-bk-gold">contact</span>
           </h1>
           <p class="mt-4 text-white/80 max-w-2xl">
-            Basés à Tanger, nous répondons sous 24h ouvrées. Dites-nous votre besoin (VRD, bâtiments, génie civil) — on vous propose un phasage réaliste et un chiffrage clair.
+            Basés en Tunisie, nous répondons sous 24h ouvrées. Dites-nous votre besoin — on vous propose un accompagnement personnalisé.
           </p>
 
           <div class="mt-6 flex flex-wrap gap-2">
-            <span class="chip">Qualité</span><span class="chip">Sécurité</span><span class="chip">Délais</span><span class="chip">Transparence</span>
+            <span class="chip">Solidarité</span><span class="chip">Engagement</span><span class="chip">Excellence</span><span class="chip">Entraide</span>
           </div>
 
           <div class="mt-7 flex flex-col sm:flex-row gap-3">
-            <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Appels d’offres / devis</Link>
-            <a href="https://wa.me/212770556021" target="_blank" rel="noopener" class="btn-ghost">WhatsApp</a>
+            <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Activités & Événements</Link>
+            <a href="https://wa.me/21624282332" target="_blank" rel="noopener" class="btn-ghost">WhatsApp</a>
           </div>
         </div>
       </div>
@@ -97,15 +97,15 @@ const vReveal = {
           <div class="card ring-gold p-6 md:p-7">
             <h2 class="section-title text-left">Coordonnées</h2>
             <ul class="mt-4 space-y-3 text-white/85">
-              <li class="flex items-center gap-3"><span class="i i-phone"></span><a href="tel:+212770556021" class="hover:text-bk-gold font-semibold">+212 7 70 55 60 21</a></li>
-              <li class="flex items-center gap-3"><span class="i i-mail"></span><a href="mailto:contact@bkoconstruction.com" class="hover:text-bk-gold">contact@bkoconstruction.com</a></li>
-              <li class="flex items-center gap-3"><span class="i i-pin"></span><span>P5H4+2J3 Tanger, Maroc</span></li>
-              <li class="flex items-center gap-3"><span class="i i-clock"></span><span>Lun–Sam : 8h30 – 18h</span></li>
+              <li class="flex items-center gap-3"><span class="i i-phone"></span><a href="tel:+21624282332" class="hover:text-bk-gold font-semibold">+216 24 282 332</a></li>
+              <li class="flex items-center gap-3"><span class="i i-mail"></span><a href="mailto:amestsahel04@gmail.com" class="hover:text-bk-gold">amestsahel04@gmail.com</a></li>
+              <li class="flex items-center gap-3"><span class="i i-pin"></span><span>Tunisie - Région du Sahel</span></li>
+              <li class="flex items-center gap-3"><span class="i i-clock"></span><span>Lun–Ven : 9h – 17h</span></li>
             </ul>
             <div class="grid grid-cols-3 gap-2 pt-4">
-              <a href="tel:+212770556021" class="btn-outline-gold sm w-full justify-center">Appeler</a>
-              <a href="https://wa.me/212770556021" target="_blank" rel="noopener" class="btn-ghost sm w-full justify-center">WhatsApp</a>
-              <a href="mailto:contact@bkoconstruction.com" class="btn-ghost sm w-full justify-center">Email</a>
+              <a href="tel:+21624282332" class="btn-outline-gold sm w-full justify-center">Appeler</a>
+              <a href="https://wa.me/21624282332" target="_blank" rel="noopener" class="btn-ghost sm w-full justify-center">WhatsApp</a>
+              <a href="mailto:amestsahel04@gmail.com" class="btn-ghost sm w-full justify-center">Email</a>
             </div>
           </div>
         </div>
@@ -113,27 +113,27 @@ const vReveal = {
         <!-- Atouts + Zones -->
         <div class="lg:col-span-8 grid gap-6 md:grid-cols-2">
           <div class="card ring-gold p-6 md:p-7">
-            <h3 class="text-xl font-extrabold">Pourquoi BKOCONSTRUCTION ?</h3>
+            <h3 class="text-xl font-extrabold">Pourquoi AMEST-Sahel ?</h3>
             <div class="mini-bullets mt-3">
-              <span>✔️ Métrés & variantes optimisées</span>
-              <span>✔️ Délais & phasage détaillés</span>
-              <span>✔️ Proposition claire & traçable</span>
-              <span>✔️ HSE & qualité au cœur</span>
+              <span>✔️ Solidarité entre étudiants maliens</span>
+              <span>✔️ Développement académique & professionnel</span>
+              <span>✔️ Activités socioculturelles enrichissantes</span>
+              <span>✔️ Promotion de la culture malienne</span>
             </div>
             <div class="mt-5">
-              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Demander un devis</Link>
+              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Voir nos activités</Link>
             </div>
           </div>
 
           <div class="card ring-gold p-6 md:p-7">
-            <h3 class="text-xl font-extrabold">Zones d’intervention</h3>
-            <p class="text-white/80 mt-2">Nord & national : Tanger, Tétouan, Kénitra, Rabat, Casablanca… Interventions possibles partout au Maroc.</p>
+            <h3 class="text-xl font-extrabold">Nos Domaines d'Action</h3>
+            <p class="text-white/80 mt-2">Événements éducatifs, culturels, sportifs et initiatives de développement pour la communauté étudiante malienne en Tunisie.</p>
             <div class="mt-4 flex flex-wrap gap-2">
-              <span class="badge-ghost">VRD</span>
-              <span class="badge-ghost">Bâtiments</span>
-              <span class="badge-ghost">Génie civil</span>
-              <span class="badge-ghost">Site occupé</span>
-              <span class="badge-ghost">HSE</span>
+              <span class="badge-ghost">Éducatif</span>
+              <span class="badge-ghost">Culturel</span>
+              <span class="badge-ghost">Sportif</span>
+              <span class="badge-ghost">Social</span>
+              <span class="badge-ghost">Intégration</span>
             </div>
           </div>
         </div>
@@ -148,19 +148,19 @@ const vReveal = {
           <div class="map-wrap">
             <iframe
               class="absolute inset-0 w-full h-full"
-              title="Localisation BKOCONSTRUCTION"
+              title="Localisation AMEST-Sahel"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps?q=P5H4%2B2J3%20Tanger%2C%20Maroc&output=embed">
+              src="https://www.google.com/maps?q=Tunisie+Sahel&output=embed">
             </iframe>
           </div>
           <div class="p-4 flex items-center justify-between gap-3">
-            <div class="text-white/80 text-sm">P5H4+2J3 Tanger, Maroc — Accès facile, stationnement à proximité.</div>
+            <div class="text-white/80 text-sm">Tunisie - Région du Sahel — Siège de l'association étudiante.</div>
             <a
               class="btn-ghost"
               target="_blank"
               rel="noopener"
-              href="https://www.google.com/maps/search/?api=1&query=P5H4%2B2J3%20Tanger%2C%20Maroc"
+              href="https://www.google.com/maps/search/?api=1&query=Tunisie+Sahel"
             >Ouvrir dans Google Maps</a>
           </div>
         </div>
@@ -174,12 +174,12 @@ const vReveal = {
           <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
           <div class="grid md:grid-cols-3 gap-5 items-center">
             <div class="md:col-span-2">
-              <h3 class="text-2xl md:text-3xl font-extrabold">Besoin d’un chiffrage clair ?</h3>
-              <p class="text-white/80 mt-2">Envoyez votre DCE ou demandez un devis express. Réponse sous 24h ouvrées.</p>
+              <h3 class="text-2xl md:text-3xl font-extrabold">Rejoignez notre communauté ?</h3>
+              <p class="text-white/80 mt-2">Étudiant malien en Tunisie ? Contactez-nous pour intégrer l'association et participer à nos activités.</p>
             </div>
             <div class="flex gap-3 md:justify-end">
-              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Appels d’offres / Devis</Link>
-              <a href="https://wa.me/212770556021" target="_blank" rel="noopener" class="btn-ghost">WhatsApp</a>
+              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Nos activités</Link>
+              <a href="https://wa.me/21624282332" target="_blank" rel="noopener" class="btn-ghost">WhatsApp</a>
             </div>
           </div>
         </div>

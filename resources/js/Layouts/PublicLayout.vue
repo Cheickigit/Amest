@@ -13,14 +13,10 @@ const user = computed(() => page.props.auth?.user ?? null)
 const FALLBACKS: Record<string, string> = {
   home: '/',
   'public.about': '/a-propos',
-  'public.services': '/services',
-  'public.projects': '/realisations',
-  'public.projects.show': '/realisations',
   'public.posts': '/actualites',
-  'public.posts.show': '/actualites',
-  'public.rfp': '/appels-d-offres',
+  'public.announcements': '/annonces-archives',
+  'public.team': '/equipe',
   'public.contact': '/contact',
-  'public.quote': '/devis',
   login: '/login',
   dashboard: '/dashboard',
 }
@@ -33,7 +29,7 @@ function r(name: string, params?: any, absolute = false, fallback?: string) {
   return fallback ?? FALLBACKS[name] ?? '#'
 }
 
-/* Route courante (avec fallback par URL si Ziggy indispo) */
+/* Route courante */
 function getCurrentRoute(): string | null {
   try {
     const fn = ziggyRoute as unknown as (() => any)
@@ -70,12 +66,29 @@ const lastY = ref(0)
 const lastDeltaDown = ref(false)
 const headerHover = ref(false)
 
-/* Contact */
-const phoneDisplay = ref('+212 7 70 55 60 21')
-const phoneHref    = ref('tel:+212770556021')
-const whatsappHref = ref('https://wa.me/212770556021')
-const email        = ref('contact@bkoconstruction.com')
-const city         = ref('Tanger, Maroc')
+/* Contact AMEST-Sahel */
+const phoneDisplay = ref('24 282 332')
+const phoneHref    = ref('tel:24282332')
+const whatsappHref = ref('https://wa.me/21224282332')
+const email        = ref('amestsahel04@gmail.com')
+const city         = ref('Tunisie - Région Sahel')
+
+// Gestion robuste des logos avec fallback
+const logoError = (event: Event, size: 'small' | 'medium' | 'large' = 'medium') => {
+  const target = event.target as HTMLImageElement
+  target.style.display = 'none'
+  const parent = target.parentElement
+  if (parent) {
+    const sizes = {
+      small: 'w-8 h-8 text-sm',
+      medium: 'w-10 h-10 text-base',
+      large: 'w-12 h-12 text-lg'
+    }
+
+    parent.className = `${sizes[size]} bg-gradient-to-br from-green-600 via-yellow-500 to-red-600 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg`
+    parent.innerHTML = 'AM'
+  }
+}
 
 /* Scroll / FX */
 const showUp = ref(false)
@@ -123,95 +136,117 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div :class="['min-h-screen bg-bk-night text-bk-off relative overflow-x-hidden', open ? 'overflow-hidden' : '']">
-
-    <!-- BACKDROP décoratif -->
-    <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
-      <div class="bk-grid"></div>
-      <div class="atlas-aurora a"></div>
-      <div class="atlas-aurora b"></div>
-      <div class="atlas-aurora c"></div>
-      <div class="spotlight"></div>
-    </div>
+  <div class="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 text-gray-900 relative overflow-x-hidden">
 
     <!-- Barre de progression lecture -->
-    <div class="progress-line" :style="`transform:scaleX(${progress})`"></div>
+    <div class="progress-line bg-green-600" :style="`transform:scaleX(${progress})`"></div>
 
     <!-- ======= HEADER ======= -->
     <header
       class="fixed top-0 inset-x-0 z-50 border-b transition-all duration-300 ease-out
-             backdrop-blur supports-[backdrop-filter]:bg-[#151e27]/80 bg-[#151e27]/92
+             backdrop-blur supports-[backdrop-filter]:bg-white/90 bg-white/95
              h-[76px] lg:h-[108px]"
-      :class="scrolled ? 'border-white/15 shadow-[0_10px_40px_-30px_rgba(0,0,0,.8)]' : 'border-white/10'"
+      :class="scrolled ? 'border-green-200 shadow-lg' : 'border-transparent'"
       @mouseenter="onHeaderEnter" @mouseleave="onHeaderLeave"
     >
       <div class="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-rows-[0px_76px] lg:grid-rows-[40px_68px]">
-        <!-- TOPBAR -->
-        <div
-          class="row-start-1 row-end-2 hidden lg:flex h-10 items-center justify-between text-[13px] text-white/85 border-b border-white/10
-                 transition-all duration-200 ease-out bg-gradient-to-b from-white/5 to-transparent will-change-[transform,opacity]"
-          :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'"
-        >
-          <div class="flex items-center gap-6">
-            <span class="chip-ma">MA</span>
-            <span class="text-white/85">Entreprise marocaine de BTP — Qualité • Sécurité • Délais</span>
+        <!-- TOPBAR - Couleurs Mali -->
+<div
+  class="row-start-1 row-end-2 hidden lg:flex h-10 items-center justify-between text-[13px] text-gray-700 border-b border-green-200
+         transition-all duration-200 ease-out bg-gradient-to-b from-green-50 to-transparent will-change-[transform,opacity]"
+  :class="topbarPinned ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'"
+>
+  <div class="flex items-center gap-6">
+    <!-- Drapeau Mali miniature -->
+    <div class="flex h-6 w-12 rounded overflow-hidden shadow-sm">
+      <div class="flex-1 bg-green-600"></div>
+      <div class="flex-1 bg-yellow-500"></div>
+      <div class="flex-1 bg-red-600"></div>
+    </div>
 
-            <a :href="phoneHref" class="inline-flex items-center gap-2 hover:text-bk-gold">
-              <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>
-              <span>{{ phoneDisplay }}</span>
-            </a>
+    <!-- Texte sur deux lignes -->
+    <div class="flex flex-col leading-tight">
+      <span class="text-gray-700 block">Association Malienne des Étudiants et</span>
+      <span class="text-gray-700 block">Stagiaires en Tunisie — Section Sahel</span>
+    </div>
 
-            <a :href="'mailto:' + email" class="inline-flex items-center gap-2 hover:text-bk-gold">
-              <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 8l-8 5-8-5V6l8 5 8-5v2z"/><path fill="currentColor" d="M20 18H4v-2h16v2z"/></svg>
-              <span>{{ email }}</span>
-            </a>
+    <a :href="phoneHref" class="inline-flex items-center gap-2 hover:text-green-700">
+      <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>
+      <span>{{ phoneDisplay }}</span>
+    </a>
 
-            <span class="inline-flex items-center gap-2 text-white/70">
-              <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>
-              <span>{{ city }}</span>
-            </span>
-          </div>
+    <a :href="'mailto:' + email" class="inline-flex items-center gap-2 hover:text-green-700">
+      <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 8l-8 5-8-5V6l8 5 8-5v2z"/><path fill="currentColor" d="M20 18H4v-2h16v2z"/></svg>
+      <span>{{ email }}</span>
+    </a>
 
-          <div class="flex items-center gap-3">
-            <a :href="whatsappHref" target="_blank" rel="noopener" class="hover:text-bk-gold inline-flex items-center gap-1">
-              <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 3.5A10 10 0 0012 1a10 10 0 00-8.66 15.07L2 23l7.12-1.87A10 10 0 0022 11a10 10 0 00-2-7.5zM12 19a8 8 0 118-8 8 8 0 01-8 8z"/></svg>
-              WhatsApp
-            </a>
-            <span class="text-white/40">|</span>
-            <button class="hover:text-bk-gold">FR</button>
-            <span class="text-white/40">/</span>
-            <button class="hover:text-bk-gold">AR</button>
-          </div>
-        </div>
+    <span class="inline-flex items-center gap-2 text-gray-600">
+      <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>
+      <span>{{ city }}</span>
+    </span>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <a :href="whatsappHref" target="_blank" rel="noopener" class="hover:text-green-700 inline-flex items-center gap-1">
+      <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 3.5A10 10 0 0012 1a10 10 0 00-8.66 15.07L2 23l7.12-1.87A10 10 0 0022 11a10 10 0 00-2-7.5zM12 19a8 8 0 118-8 8 8 0 01-8 8z"/></svg>
+      WhatsApp
+    </a>
+    <span class="text-gray-400">|</span>
+    <button class="hover:text-green-700">FR</button>
+    <span class="text-gray-400">/</span>
+    <button class="hover:text-green-700">AR</button>
+  </div>
+</div>
 
         <!-- NAVBAR -->
         <div class="row-start-2 row-end-3 flex items-center justify-between">
-          <Link :href="r('home')" class="flex items-center">
-            <img class="brand-logo" src="/assets/logo-bk.jpeg" alt="BKOCONSTRUCTION logo">
+          <!-- Logo AMEST Sahel AVEC VOTRE LOGO -->
+          <Link :href="r('home')" class="flex items-center space-x-3 group">
+            <!-- Votre logo - Version robuste avec fallback -->
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden bg-white p-1 shadow-lg">
+              <img
+                src="/assets/logo-amest.jpg"
+                alt="AMEST Sahel Logo"
+                class="w-full h-full object-contain"
+                @error="(e) => logoError(e, 'large')"
+              >
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xl font-bold text-gray-900 group-hover:text-green-700 transition-colors duration-300 leading-tight">
+                AMEST
+              </span>
+              <span class="text-xs text-green-600 font-semibold tracking-wide -mt-1">
+                Section Sahel
+              </span>
+            </div>
           </Link>
 
-          <nav class="hidden md:flex items-center gap-1 rounded-2xl px-1 py-1 bg-white/5 ring-1 ring-white/10">
-            <Link :href="r('home')"            :class="['nav-pill', isActive('home') ? 'text-bk-gold' : '']"                        :aria-current="isActive('home') ? 'page' : undefined">Accueil</Link>
-            <Link :href="r('public.about')"    :class="['nav-pill', isActive('public.about') ? 'text-bk-gold' : '']"                :aria-current="isActive('public.about') ? 'page' : undefined">À propos</Link>
-            <Link :href="r('public.services')" :class="['nav-pill', isActive('public.services') ? 'text-bk-gold' : '']"             :aria-current="isActive('public.services') ? 'page' : undefined">Services</Link>
-            <Link :href="r('public.projects')" :class="['nav-pill', isActive('public.projects', true) ? 'text-bk-gold' : '']"        :aria-current="isActive('public.projects', true) ? 'page' : undefined">Réalisations</Link>
-            <Link :href="r('public.posts')"    :class="['nav-pill', isActive('public.posts', true) ? 'text-bk-gold' : '']"           :aria-current="isActive('public.posts', true) ? 'page' : undefined">Actualités</Link>
-            <Link :href="r('public.rfp')"      :class="['nav-pill', isActive('public.rfp') ? 'text-bk-gold' : '']"                  :aria-current="isActive('public.rfp') ? 'page' : undefined">Appels d’offres</Link>
-            <Link :href="r('public.contact')"  :class="['nav-pill', isActive('public.contact') ? 'text-bk-gold' : '']"              :aria-current="isActive('public.contact') ? 'page' : undefined">Contact</Link>
+          <nav class="hidden md:flex items-center gap-1 rounded-2xl px-1 py-1 bg-white/80 ring-1 ring-green-200 backdrop-blur-sm">
+            <Link :href="r('home')"            :class="['nav-pill', isActive('home') ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('home') ? 'page' : undefined">Accueil</Link>
+            <Link :href="r('public.about')"    :class="['nav-pill', isActive('public.about') ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('public.about') ? 'page' : undefined">À propos</Link>
+            <Link :href="r('public.posts')" :class="['nav-pill', isActive('public.posts', true) ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('public.posts', true) ? 'page' : undefined">Activités</Link>
+            <Link :href="r('public.announcements')"
+
+                :class="['nav-pill', isActive('public.announcements', true) ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']"
+                :aria-current="isActive('public.announcements', true) ? 'page' : undefined">
+                Annonces & Archives
+            </Link>
+
+            <Link :href="r('public.contact')"  :class="['nav-pill', isActive('public.contact') ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('public.contact') ? 'page' : undefined">Contact</Link>
           </nav>
 
           <div class="hidden md:flex items-center gap-3">
-            <Link :href="r('public.quote')" class="btn-gold" :aria-current="isActive('public.quote') ? 'page' : undefined">
-              <span class="btn-glow"></span><span class="btn-shine"></span>Demander un devis
+            <Link :href="r('public.contact')" class="btn-mali" :aria-current="isActive('public.contact') ? 'page' : undefined">
+              Nous Rejoindre
             </Link>
             <Link v-if="!user" :href="r('login')"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Se connecter</Link>
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 border border-green-300 text-gray-700 hover:border-green-500 hover:text-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-500/50">Se connecter</Link>
             <Link v-else :href="r('dashboard')"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition focus:outline-none focus:ring-2 focus:ring-bk-gold/50">Espace</Link>
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 border border-green-300 text-gray-700 hover:border-green-500 hover:text-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-500/50">Espace</Link>
           </div>
 
           <!-- Burger -->
-          <button class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white/95 border border-white/25 hover:border-bk-gold/70 shadow-[0_12px_30px_-18px_rgba(0,0,0,.6)] transition"
+          <button class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-green-100 text-green-700 border border-green-300 hover:border-green-500 hover:text-green-800 shadow-sm transition"
                   @click="open = !open" :aria-expanded="open" aria-controls="mobile-drawer">
             <span class="sr-only">Ouvrir le menu</span>
             <svg v-if="!open" viewBox="0 0 24 24" class="w-6 h-6"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
@@ -225,137 +260,170 @@ onBeforeUnmount(() => {
     <div class="h-[76px] lg:h-[108px]" aria-hidden="true"></div>
 
     <!-- Overlay + Drawer Mobile -->
-    <div v-show="open" class="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm" @click="open=false"></div>
+    <div v-show="open" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm" @click="open=false"></div>
     <div v-show="open" id="mobile-drawer" role="dialog" aria-modal="true" class="fixed top-2 inset-x-2 z-[61]">
-      <div class="relative overflow-hidden rounded-2xl border border-white/15 text-bk-off shadow-[0_30px_80px_-20px_rgba(0,0,0,.7)] bg-gradient-to-b from-[#0f141a]/95 to-[#0f141a]/80" @click.stop>
+      <div class="relative overflow-hidden rounded-2xl border border-green-200 bg-white shadow-2xl" @click.stop>
         <div class="flex items-center justify-between px-4 pt-3 pb-2">
-          <img src="/assets/logo-bk.jpeg" class="h-10 w-auto object-contain" alt="BKOCONSTRUCTION">
-          <button class="p-2 rounded-lg bg-white/10 border border-white/15 hover:border-bk-gold/60 transition" @click="open=false" aria-label="Fermer">
+          <div class="flex items-center space-x-3">
+            <!-- Logo dans le menu mobile -->
+            <div class="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden bg-white p-1">
+              <img
+                src="/assets/logo-amest.jpg"
+                alt="AMEST Sahel Logo"
+                class="w-full h-full object-contain"
+                @error="(e) => logoError(e, 'medium')"
+              >
+            </div>
+            <div class="flex flex-col">
+              <span class="text-lg font-bold text-gray-900">AMEST</span>
+              <span class="text-xs text-green-600 font-semibold -mt-1">Section Sahel</span>
+            </div>
+          </div>
+          <button class="p-2 rounded-lg bg-green-100 border border-green-300 hover:border-green-500 transition" @click="open=false" aria-label="Fermer">
             <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2"/></svg>
           </button>
         </div>
 
         <div class="grid grid-cols-2 gap-2 px-3 pb-3">
-          <Link :href="r('home')"            class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Accueil</Link>
-          <Link :href="r('public.about')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">À propos</Link>
-          <Link :href="r('public.services')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Services</Link>
-          <Link :href="r('public.projects')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Réalisations</Link>
-          <Link :href="r('public.posts')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Actualités</Link>
-          <Link :href="r('public.rfp')"      class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Appels d’offres</Link>
-          <Link :href="r('public.contact')"  class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Contact</Link>
-          <Link :href="r('public.quote')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-bold bg-white/5 ring-1 ring-white/15 hover:ring-bk-gold/60 transition" @click="open=false">Devis express</Link>
+          <Link :href="r('home')"            class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-semibold bg-green-50 border border-green-200 hover:border-green-500 hover:text-green-700 transition" @click="open=false">Accueil</Link>
+          <Link :href="r('public.about')"    class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-semibold bg-green-50 border border-green-200 hover:border-green-500 hover:text-green-700 transition" @click="open=false">À propos</Link>
+          <Link :href="r('public.posts')" class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-semibold bg-green-50 border border-green-200 hover:border-green-500 hover:text-green-700 transition" @click="open=false">Activités</Link>
+          <Link :href="r('public.announcements')"     class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-semibold bg-green-50 border border-green-200 hover:border-green-500 hover:text-green-700 transition" @click="open=false">Annonces</Link>
+          <Link :href="r('public.contact')"  class="flex items-center justify-center min-h-[3.2rem] rounded-xl font-semibold bg-green-50 border border-green-200 hover:border-green-500 hover:text-green-700 transition" @click="open=false">Contact</Link>
         </div>
 
         <div class="px-3 pb-3 grid gap-2">
-          <Link :href="r('public.quote')" class="btn-gold text-center" @click="open=false">
-            <span class="btn-glow"></span><span class="btn-shine"></span> Demander un devis
+          <Link :href="r('public.contact')" class="btn-mali text-center" @click="open=false">
+            Nous Rejoindre
           </Link>
           <div class="flex gap-2">
-            <Link v-if="!user" :href="r('login')"     class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition" @click="open=false">Se connecter</Link>
-            <Link v-else        :href="r('dashboard')" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 border border-white/15 text-white hover:border-bk-gold/60 transition" @click="open=false">Espace</Link>
+            <Link v-if="!user" :href="r('login')"     class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 border border-green-300 text-gray-700 hover:border-green-500 hover:text-green-700 transition" @click="open=false">Se connecter</Link>
+            <Link v-else        :href="r('dashboard')" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 border border-green-300 text-gray-700 hover:border-green-500 hover:text-green-700 transition" @click="open=false">Espace</Link>
           </div>
         </div>
       </div>
     </div>
 
     <!-- CONTENU PAGE -->
-    <main id="page-content"><slot /></main>
+    <main id="page-content" class="bg-gradient-to-br from-green-50 to-yellow-50"><slot /></main>
 
-    <!-- ======= FOOTER (réintégré) ======= -->
-    <footer class="mt-16 text-sm relative overflow-hidden">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-        <div class="absolute inset-0 -z-10 blur-[70px] opacity-30 mix-blend-screen
-                    bg-[radial-gradient(60%_60%_at_20%_20%,#dcc176_0%,transparent_60%)]"></div>
+    <!-- ======= FOOTER AMEST-SAHEL - Couleurs Mali ======= -->
+    <footer class="bg-gradient-to-br from-green-600 to-green-700 text-white mt-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Newsletter -->
+        <div class="bg-gradient-to-r from-yellow-500 to-red-600 rounded-3xl p-8 text-white mb-12 text-center">
+          <h3 class="text-2xl font-bold mb-3">📧 Restez informé</h3>
+          <p class="text-white/90 mb-6 max-w-md mx-auto">
+            Recevez nos actualités, événements et opportunités pour la communauté étudiante malienne.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Votre email"
+              class="flex-1 px-4 py-3 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+            <button class="bg-white text-green-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors">
+              S'abonner
+            </button>
+          </div>
+        </div>
 
-        <div class="footer-card gradient-ring">
-          <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
-
-          <div class="footer-content">
-            <div class="min-w-0">
-              <img src="/assets/logo-bk.jpeg" class="footer-logo" alt="BKOCONSTRUCTION">
-              <p class="text-bk-off/85">Entreprise marocaine de BTP : routes, bâtiments, VRD, génie civil & immobilier.</p>
-              <div class="actions">
-                <a :href="whatsappHref" target="_blank" rel="noopener" class="icon-btn" aria-label="WhatsApp">
-                  <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 3.5A10 10 0 0012 1a10 10 0 00-8.66 15.07L2 23l7.12-1.87A10 10 0 0022 11a10 10 0 00-2-7.5zM12 19a8 8 0 118-8 8 8 0 01-8 8z"/></svg>
-                </a>
-                <a :href="phoneHref" class="icon-btn" aria-label="Appeler">
-                  <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>
-                </a>
-                <a :href="'mailto:' + email" class="icon-btn" aria-label="Email">
-                  <svg viewBox="0 0 24 24" class="w-4 h-4"><path fill="currentColor" d="M20 8l-8 5-8-5V6l8 5 8-5v2z"/><path fill="currentColor" d="M20 18H4v-2h16v2z"/></svg>
-                </a>
+        <div class="grid md:grid-cols-4 gap-8">
+          <!-- Logo et Description -->
+          <div class="md:col-span-2">
+            <div class="flex items-center space-x-3 mb-4">
+              <!-- Logo dans le footer -->
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden bg-white p-1 shadow-lg">
+                <img
+                  src="/assets/logo-amest.jpg"
+                  alt="AMEST Sahel Logo"
+                  class="w-full h-full object-contain"
+                  @error="(e) => logoError(e, 'large')"
+                >
+              </div>
+              <div class="flex flex-col">
+                <span class="text-2xl font-bold text-white">AMEST</span>
+                <span class="text-sm text-yellow-300 font-semibold -mt-1">Section Sahel</span>
               </div>
             </div>
-
-            <div>
-              <div class="footer-title">Services</div>
-              <ul class="list">
-                <li><Link :href="r('public.services')">Routes & VRD</Link></li>
-                <li><Link :href="r('public.services')">Bâtiments</Link></li>
-                <li><Link :href="r('public.services')">Immobilier</Link></li>
-                <li><Link :href="r('public.services')">Rénovation</Link></li>
-                <li><Link :href="r('public.services')">Génie civil</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <div class="footer-title">Secteurs</div>
-              <ul class="list">
-                <li><Link :href="r('public.services')">Public & Collectivités</Link></li>
-                <li><Link :href="r('public.services')">Immobilier privé</Link></li>
-                <li><Link :href="r('public.services')">Industrie & Logistique</Link></li>
-                <li><Link :href="r('public.services')">Infrastructures urbaines</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <div class="footer-title">Ressources</div>
-              <ul class="list">
-                <li><Link :href="r('public.projects')">Réalisations</Link></li>
-                <li><Link :href="r('public.posts')">Actualités</Link></li>
-                <li><Link :href="r('public.about')">À propos</Link></li>
-              </ul>
-            </div>
-
-            <div class="min-w-0">
-              <div class="footer-title">Contact</div>
-              <ul class="list mb-3">
-                <li><a :href="phoneHref">Tél : <span class="text-bk-off">{{ phoneDisplay }}</span></a></li>
-                <li><a :href="'mailto:' + email">{{ email }}</a></li>
-                <li class="text-bk-off/75">{{ city }}</li>
-              </ul>
-
-              <Link :href="r('public.quote')" class="btn-gold w-full justify-center">
-                <span class="btn-glow"></span><span class="btn-shine"></span>
-                Demander un devis
-              </Link>
-
-              <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                <div class="rounded-lg bg-white/5 ring-1 ring-white/10 p-2">
-                  <div class="text-xs text-white/70">ISO</div>
-                  <div class="font-bold">9001</div>
-                </div>
-                <div class="rounded-lg bg-white/5 ring-1 ring-white/10 p-2">
-                  <div class="text-xs text-white/70">ISO</div>
-                  <div class="font-bold">45001</div>
-                </div>
-                <div class="rounded-lg bg-white/5 ring-1 ring-white/10 p-2">
-                  <div class="text-xs text-white/70">Clients</div>
-                  <div class="font-bold">98% sats.</div>
-                </div>
-              </div>
+            <p class="text-green-100 mb-6 max-w-md leading-relaxed">
+              Association Malienne des Étudiants et Stagiaires en Tunisie - Section Sahel.
+              Unis pour la réussite académique et l'épanouissement de la communauté étudiante malienne en Tunisie.
+            </p>
+            <div class="flex space-x-3">
+              <a href="#" class="w-10 h-10 bg-green-700 rounded-2xl flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-1">
+                <span class="text-sm">📘</span>
+              </a>
+              <a href="#" class="w-10 h-10 bg-green-700 rounded-2xl flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-1">
+                <span class="text-sm">📷</span>
+              </a>
+              <a href="#" class="w-10 h-10 bg-green-700 rounded-2xl flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 transform hover:-translate-y-1">
+                <span class="text-sm">📺</span>
+              </a>
             </div>
           </div>
 
-          <div class="footer-bottom">
-            <div class="min-w-0">
-              © {{ new Date().getFullYear() }} BKO Construction. Tous droits réservés.
+          <!-- Liens Rapides -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4 text-white">Navigation</h3>
+            <ul class="space-y-3">
+              <li><Link :href="r('home')" class="text-green-100 hover:text-yellow-300 transition-colors duration-200">Accueil</Link></li>
+              <li><Link :href="r('public.about')" class="text-green-100 hover:text-yellow-300 transition-colors duration-200">À propos</Link></li>
+              <li><Link :href="r('public.posts')" class="text-green-100 hover:text-yellow-300 transition-colors duration-200">Activités</Link></li>
+              <li><Link :href="r('public.announcements')" class="text-green-100 hover:text-yellow-300 transition-colors duration-200">Annonces</Link></li>
+              <li><Link :href="r('public.contact')" class="text-green-100 hover:text-yellow-300 transition-colors duration-200">Contact</Link></li>
+            </ul>
+          </div>
+
+          <!-- Contact -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4 text-white">Contact</h3>
+            <div class="space-y-4">
+              <div class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 bg-yellow-500/30 rounded-2xl flex items-center justify-center group-hover:bg-yellow-500 transition-colors">
+                  <span class="text-sm">📧</span>
+                </div>
+                <div>
+                  <a href="mailto:amestsahel04@gmail.com" class="text-green-100 hover:text-yellow-300 transition-colors block">
+                    amestsahel04@gmail.com
+                  </a>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 bg-yellow-500/30 rounded-2xl flex items-center justify-center group-hover:bg-yellow-500 transition-colors">
+                  <span class="text-sm">📱</span>
+                </div>
+                <div>
+                  <a href="tel:24282332" class="text-green-100 hover:text-yellow-300 transition-colors block">
+                    24 282 332
+                  </a>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 bg-yellow-500/30 rounded-2xl flex items-center justify-center group-hover:bg-yellow-500 transition-colors">
+                  <span class="text-sm">📍</span>
+                </div>
+                <span class="text-green-100">Tunisie - Région Sahel</span>
+              </div>
             </div>
-            <div class="links">
-              <a :href="whatsappHref" target="_blank" rel="noopener">WhatsApp</a>
-              <a :href="phoneHref">Appel</a>
-              <a :href="'mailto:' + email">Email</a>
-            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="border-t border-green-500 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p class="text-green-200 text-sm">
+            © 2025 AMEST-Sahel. Tous droits réservés.
+          </p>
+          <div class="flex space-x-6 mt-4 md:mt-0">
+            <a href="#" class="text-green-200 hover:text-yellow-300 text-sm transition-colors">
+              Confidentialité
+            </a>
+            <a href="#" class="text-green-200 hover:text-yellow-300 text-sm transition-colors">
+              Conditions
+            </a>
+            <a href="#" class="text-green-200 hover:text-yellow-300 text-sm transition-colors">
+              FAQ
+            </a>
           </div>
         </div>
       </div>
@@ -364,13 +432,13 @@ onBeforeUnmount(() => {
     <!-- Actions flottantes -->
     <a :href="whatsappHref" target="_blank" rel="noopener"
        class="fixed bottom-5 right-5 inline-flex items-center justify-center w-12 h-12 rounded-full
-              bg-white/10 border border-white/10 hover:border-bk-gold/60 backdrop-blur z-40">
+              bg-green-600 text-white border border-green-600 hover:bg-green-700 hover:border-green-700 shadow-lg z-40 transition-all duration-300 transform hover:scale-110">
       <svg viewBox="0 0 24 24" class="w-6 h-6"><path fill="currentColor" d="M20 3.5A10 10 0 0012 1a10 10 0 00-8.66 15.07L2 23l7.12-1.87A10 10 0 0022 11a10 10 0 00-2-7.5zM12 19a8 8 0 118-8 8 8 0 01-8 8z"/></svg>
     </a>
 
     <button v-show="showUp" @click="scrollToTop"
       class="fixed bottom-5 right-20 md:right-24 inline-flex items-center justify-center w-10 h-10 rounded-full
-             bg-white/10 border border-white/15 hover:border-bk-gold/60 backdrop-blur z-40 transition"
+             bg-yellow-500 text-white border border-yellow-500 hover:bg-yellow-600 hover:border-yellow-600 shadow-lg z-40 transition-all duration-300 transform hover:scale-110"
       aria-label="Retour en haut">
       <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l6 6-1.4 1.4L13 7.8V20h-2V7.8L7.4 11.4 6 10l6-6z"/></svg>
     </button>
@@ -378,7 +446,58 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.brand-logo{ height:3rem; width:auto; object-fit:contain; transition:height .18s ease }
-@media (min-width:768px){ .brand-logo{ height:3.25rem } }
-@keyframes shine { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+.progress-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #059669, #d97706, #dc2626);
+  transform-origin: left;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+.btn-mali {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #059669, #d97706, #dc2626);
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.btn-mali:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -10px rgba(5, 150, 105, 0.5);
+}
+
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.brand-logo {
+  height: 3rem;
+  width: auto;
+  object-fit: contain;
+  transition: height 0.18s ease;
+}
+
+@media (min-width: 768px) {
+  .brand-logo {
+    height: 3.25rem;
+  }
+}
 </style>

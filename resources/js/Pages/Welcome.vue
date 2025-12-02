@@ -14,257 +14,149 @@ function r(name: string, params?: any, absolute = false, fallback: string = '#')
 }
 
 /* Types & props */
-type Activity = {
-  id: number;
-  title: string;
-  date: string;
-  location: string;
-  summary: string;
-  cover_image?: string|null;
-  category: 'culture'|'education'|'sport'|'social';
-}
+type ActivityItem = { type:'image'|'video', kind?:'upload'|'url', path?:string|null, url?:string|null }
+type Activity   = { id:number; title:string; slug?:string|null; location?:string|null; category?:string|null; status:'brouillon'|'publié'; cover_image?:string|null; media?:ActivityItem[]; partner?:string|null; organization?:string|null }
+type Post      = { id:number; title:string; slug?:string|null; excerpt?:string|null; cover_image?:string|null; published_at?:string|null }
+type FaqItem   = { question:string; answer:string }
 
-type TeamMember = {
-  name: string;
-  role: string;
-  formation: string;
-  email: string;
-  photo?: string;
-}
+const props = defineProps<{ heroActivities?:Activity[]|null; activities?:Activity[]|null; posts?:Post[]|null; faqs?:FaqItem[]|null }>()
 
-type FormerPresident = {
-  name: string;
-  mandate: string;
-}
-
-const props = defineProps<{
-  heroActivities?: Activity[]|null;
-  activities?: Activity[]|null;
-  team?: TeamMember[]|null;
-  formerPresidents?: FormerPresident[]|null;
-}>()
-
-/* Données de l'association */
-const associationInfo = {
-  name: "AMEST-Sahel",
-  fullName: "Association Malienne des Étudiants et Stagiaires en Tunisie section Sahel",
-  description: "Organisation qui vise à rassembler les étudiants et stagiaires maliens vivant en Tunisie, en mettant en avant la solidarité, l'intégration et le développement académique et professionnel.",
-  mission: "Favoriser l'entraide et l'intégration des étudiants et stagiaires maliens au sahel de la Tunisie tout en créant un environnement propice à leur épanouissement.",
-  values: ["Solidarité", "Engagement", "Respect", "Excellence"],
-  contact: {
-    email: "amestsahel04@gmail.com",
-    phone: "24282332",
-    facebook: "amest sahel",
-    instagram: "Amest_sahel",
-    youtube: "Amest-talk"
-  }
-}
-
-/* Listes calculées */
 const heroList = computed<Activity[]>(() => props.heroActivities ?? [])
-const activityList = computed<Activity[]>(() => props.activities ?? [])
-const teamList = computed<TeamMember[]>(() => props.team ?? [])
-const presidentsList = computed<FormerPresident[]>(() => props.formerPresidents ?? [])
+const gridList = computed<Activity[]>(() => props.activities ?? [])
+const postList = computed<Post[]>(() => props.posts ?? [])
 
-/* Animation reveal */
-let io: IntersectionObserver|null = null
+/* Partenaires */
+const partnerList = computed(() => {
+  const base = ['Université de Sousse','Université de Monastir','Campus Mahdia']
+  const baseLower = base.map(s=>s.toLowerCase())
+  const seen = new Set<string>()
+  ;[...heroList.value,...gridList.value].forEach(p=>{
+    const n = (p?.partner || p?.organization || '').toString().trim()
+    if (n && !baseLower.includes(n.toLowerCase())) seen.add(n)
+  })
+  return [...base, ...Array.from(seen)]
+})
+
+/* v-reveal */
+let io:IntersectionObserver|null = null
 const vReveal = {
-  mounted(el: HTMLElement) {
+  mounted(el:HTMLElement){
     el.classList.add('reveal')
-    if (!io) {
-      io = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            e.target.classList.add('is-visible')
-            io?.unobserve(e.target)
-          }
+    if(!io){
+      io = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{
+          if(e.isIntersecting){ e.target.classList.add('is-visible'); io?.unobserve(e.target) }
         })
-      }, { threshold: .14 })
+      },{threshold:.14})
     }
     io.observe(el)
   }
 }
 
-/* Compteurs animés */
+/* v-countup */
 const vCountup = {
-  mounted(el: HTMLElement, binding: { value: number }) {
+  mounted(el:HTMLElement, binding:{value:number}){
     const target = Number(binding.value ?? 0)
     el.textContent = '0'
-    const obs = new IntersectionObserver((ents) => {
-      if (!ents[0].isIntersecting) return
+    const obs = new IntersectionObserver((ents)=>{
+      if(!ents[0].isIntersecting) return
       obs.disconnect()
-      const dur = 1200, t0 = performance.now()
-      const tick = (t: number) => {
-        const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3)
-        el.textContent = Math.round(target * e).toLocaleString('fr-FR')
-        if (p < 1) requestAnimationFrame(tick)
+      const dur=1200, t0=performance.now()
+      const tick=(t:number)=>{
+        const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3)
+        el.textContent = Math.round(target*e).toLocaleString('fr-FR')
+        if(p<1) requestAnimationFrame(tick)
       }
       requestAnimationFrame(tick)
-    }, { threshold: .35 })
+    },{threshold:.35})
     obs.observe(el)
   }
 }
 
-/* Effet tilt sur les cartes */
-function handleTilt(e: MouseEvent) {
-  const el = e.currentTarget as HTMLElement|undefined
-  if (!el) return
+/* Tilt 3D (domaines) */
+function handleTilt(e:MouseEvent){
+  const el = e.currentTarget as HTMLElement|undefined; if(!el) return
   const r = el.getBoundingClientRect()
-  const cx = (e.clientX - r.left) / r.width - .5
-  const cy = (e.clientY - r.top) / r.height - .5
-  el.style.setProperty('--rx', (-cy * 8).toFixed(2) + 'deg')
-  el.style.setProperty('--ry', (cx * 8).toFixed(2) + 'deg')
+  const cx = (e.clientX - r.left)/r.width - .5
+  const cy = (e.clientY - r.top)/r.height - .5
+  el.style.setProperty('--rx', (-cy*10).toFixed(2)+'deg')
+  el.style.setProperty('--ry', (cx*10).toFixed(2)+'deg')
 }
-
-function resetTilt(e: MouseEvent) {
-  const el = e.currentTarget as HTMLElement|undefined
-  if (!el) return
-  el.style.setProperty('--rx', '0deg')
-  el.style.setProperty('--ry', '0deg')
+function resetTilt(e:MouseEvent){
+  const el = e.currentTarget as HTMLElement|undefined; if(!el) return
+  el.style.setProperty('--rx','0deg'); el.style.setProperty('--ry','0deg')
 }
 
 /* Formulaire de contact */
-const cForm = useForm({
-  name: '',
-  email: '',
-  phone: '',
-  subject: '',
-  message: '',
-  hp: ''
-})
-
+const cForm = useForm({ name:'',email:'',phone:'', subject:'', message:'', hp:'' })
 const successMsg = ref('')
 
-function submitContact() {
+function submitContact(){
   successMsg.value = ''
-  cForm.post(r('contact.store', {}, false, '/contact'), {
-    preserveScroll: true,
-    onSuccess: () => {
-      successMsg.value = 'Merci pour votre message ! Nous vous répondrons très rapidement.'
+  cForm.post(r('forms.contact.store', {}, false, '/contact'), {
+    preserveScroll:true,
+    onSuccess:()=>{
+      successMsg.value = 'Merci, votre message a été envoyé. Nous vous recontacterons très vite.'
       const keepEmail = cForm.email
-      cForm.reset('name', 'phone', 'subject', 'message', 'hp')
+      cForm.reset('name','phone','subject','message','hp')
       cForm.email = keepEmail
     }
   })
 }
 
-/* Utilitaires */
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-}
+/* FAQ */
+const faqList = computed<FaqItem[]>(() => props.faqs && props.faqs.length ? props.faqs : [
+  { question:'Quelle est la mission de AMEST-Sahel ?', answer:'Rassembler et soutenir les étudiants et stagiaires maliens en Tunisie à travers des activités sociales, culturelles et éducatives.' },
+  { question:'Comment puis-je devenir membre ?', answer:'Contactez-nous via le formulaire ou rejoignez-nous lors de nos événements. Tous les étudiants maliens sont les bienvenus !' },
+  { question:'Quelles activités organisez-vous ?', answer:'Sorties culturelles, soutien scolaire, événements sportifs, ruptures de jeûne, et bien plus encore.' },
+  { question:'Où se situent vos locaux ?', answer:'Nous intervenons principalement dans la région du Sahel tunisien : Sousse, Monastir, Mahdia et leurs environs.' },
+])
 
-function getCategoryColor(category: string) {
-  const colors = {
-    culture: 'from-purple-500 to-pink-500',
-    education: 'from-blue-500 to-cyan-500',
-    sport: 'from-green-500 to-emerald-500',
-    social: 'from-orange-500 to-red-500'
-  }
-  return colors[category as keyof typeof colors] || 'from-gray-500 to-gray-700'
-}
-
-function getCategoryIcon(category: string) {
-  const icons = {
-    culture: '🎭',
-    education: '📚',
-    sport: '⚽',
-    social: '🤝'
-  }
-  return icons[category as keyof typeof icons] || '🌟'
-}
+/* util */
+function fmt(s?:string){ if(!s) return ''; const d=new Date(s); return isNaN(+d)?(s||''):d.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}) }
 </script>
 
 <template>
   <PublicLayout>
-    <!-- HERO SECTION -->
-    <section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-mali-blue via-mali-green to-mali-gold">
-      <!-- Arrière-plan décoratif -->
-      <div class="absolute inset-0 opacity-10">
-        <div class="absolute top-20 left-10 w-72 h-72 bg-current rounded-full mix-blend-overlay filter blur-xl animate-pulse"></div>
-        <div class="absolute bottom-20 right-10 w-96 h-96 bg-current rounded-full mix-blend-overlay filter blur-xl animate-pulse delay-1000"></div>
-      </div>
-
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center py-20">
-        <!-- Contenu principal -->
-        <div class="text-center lg:text-left" v-reveal>
-          <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
-            <span class="w-2 h-2 bg-mali-gold rounded-full animate-pulse"></span>
-            <span class="text-sm font-semibold text-white">Association étudiante malienne</span>
-          </div>
-
-          <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            <span class="block">AMEST</span>
-            <span class="block text-mali-gold">Sahel</span>
+    <!-- HERO -->
+    <section class="relative overflow-hidden pt-12 md:pt-16 pb-10 md:pb-12 bg-gradient-to-br from-green-600 to-green-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-6" v-reveal>
+          <span class="tag-ghost">Association étudiante malienne · Tunisie</span>
+          <h1 class="mt-3 text-4xl md:text-6xl font-extrabold leading-tight tracking-tight text-white">
+            Solidarité & Réussite — <span class="text-yellow-300">AMEST Sahel</span>
           </h1>
-
-          <p class="text-xl md:text-2xl text-white/90 mb-8 leading-relaxed">
-            Association Malienne des Étudiants et Stagiaires en Tunisie<br>
-            <span class="text-mali-gold font-semibold">Section Sahel</span>
+          <p class="mt-4 text-green-100">
+            Rassembler, soutenir et accompagner les étudiants et stagiaires maliens
+            dans la région du Sahel tunisien pour une expérience académique épanouissante.
           </p>
-
-          <p class="text-lg text-white/80 mb-8 max-w-2xl">
-            Rassembler, soutenir et faire rayonner la communauté étudiante malienne
-            en Tunisie à travers la solidarité, l'intégration et le développement.
-          </p>
-
-          <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            <a href="#activites" class="btn-primary group">
-              <span>Découvrir nos activités</span>
-              <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-              </svg>
-            </a>
-            <a href="#contact" class="btn-secondary">
-              Nous rejoindre
-            </a>
+          <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <a href="#activites" class="btn-outline-yellow">Nos Activités</a>
+            <a href="#contact" class="btn-ghost-light">Nous Rejoindre</a>
           </div>
-
-          <!-- Statistiques -->
-          <div class="flex flex-wrap gap-6 mt-12 justify-center lg:justify-start">
-            <div class="text-center">
-              <div class="text-2xl md:text-3xl font-bold text-white mb-1">
-                <span v-countup="150">150</span>+
-              </div>
-              <div class="text-sm text-white/70">Membres actifs</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl md:text-3xl font-bold text-white mb-1">
-                <span v-countup="25">25</span>+
-              </div>
-              <div class="text-sm text-white/70">Activités annuelles</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl md:text-3xl font-bold text-white mb-1">
-                <span v-countup="6">6</span>+
-              </div>
-              <div class="text-sm text-white/70">Ans d'engagement</div>
-            </div>
+          <div class="mt-5 flex flex-wrap gap-2">
+            <span class="chip-light">Étudiants</span><span class="chip-light">Stagiaires</span><span class="chip-light">Solidarité</span><span class="chip-light">Culture</span><span class="chip-light">Éducation</span>
           </div>
         </div>
 
-        <!-- Illustration -->
-        <div class="relative" v-reveal>
+        <!-- Illustration communauté -->
+        <div class="lg:col-span-6 relative" v-reveal>
           <div class="relative z-10">
-            <!-- Carte principale -->
             <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
               <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-mali-green/20 rounded-2xl p-4 text-center border border-mali-green/30">
+                <div class="bg-yellow-500/20 rounded-2xl p-4 text-center border border-yellow-500/30">
                   <div class="text-2xl mb-2">🎓</div>
                   <div class="text-white font-semibold text-sm">Étudiants</div>
                 </div>
-                <div class="bg-mali-gold/20 rounded-2xl p-4 text-center border border-mali-gold/30">
+                <div class="bg-red-600/20 rounded-2xl p-4 text-center border border-red-600/30">
                   <div class="text-2xl mb-2">💼</div>
                   <div class="text-white font-semibold text-sm">Stagiaires</div>
                 </div>
-                <div class="bg-mali-blue/20 rounded-2xl p-4 text-center border border-mali-blue/30">
+                <div class="bg-green-500/20 rounded-2xl p-4 text-center border border-green-500/30">
                   <div class="text-2xl mb-2">🤝</div>
                   <div class="text-white font-semibold text-sm">Solidarité</div>
                 </div>
-                <div class="bg-purple-500/20 rounded-2xl p-4 text-center border border-purple-500/30">
+                <div class="bg-yellow-500/20 rounded-2xl p-4 text-center border border-yellow-500/30">
                   <div class="text-2xl mb-2">🌍</div>
                   <div class="text-white font-semibold text-sm">Intégration</div>
                 </div>
@@ -272,99 +164,103 @@ function getCategoryIcon(category: string) {
 
               <div class="text-center">
                 <div class="text-white font-bold text-lg mb-2">Communauté Unie</div>
-                <div class="text-white/70 text-sm">Étudiants maliens en Tunisie</div>
+                <div class="text-green-100 text-sm">Étudiants maliens en Tunisie</div>
               </div>
             </div>
-
-            <!-- Éléments flottants -->
-            <div class="absolute -top-4 -right-4 w-24 h-24 bg-mali-gold/20 rounded-2xl rotate-12 border border-mali-gold/30 backdrop-blur-sm"></div>
-            <div class="absolute -bottom-4 -left-4 w-20 h-20 bg-mali-green/20 rounded-2xl -rotate-12 border border-mali-green/30 backdrop-blur-sm"></div>
           </div>
         </div>
-      </div>
-
-      <!-- Vague décorative -->
-      <div class="absolute bottom-0 left-0 right-0">
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="w-full h-12">
-          <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" class="fill-current text-white/10"></path>
-          <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" class="fill-current text-white/10"></path>
-          <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" class="fill-current text-white/10"></path>
-        </svg>
       </div>
     </section>
 
-    <!-- À PROPOS -->
-    <section id="apropos" class="py-20 bg-gray-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" v-reveal>
-          <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Notre <span class="text-mali-blue">Histoire</span>
-          </h2>
-          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Découvrez le parcours de l'AMEST-Sahel, de sa création à son rôle actuel
-            dans la communauté étudiante malienne en Tunisie.
-          </p>
-        </div>
+    <!-- NOTRE MISSION -->
+    <section id="mission" class="py-20 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" v-reveal>
+        <div class="relative overflow-hidden rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-yellow-50 shadow-xl">
+          <div class="relative grid gap-6 p-6 md:p-8 lg:p-10 lg:grid-cols-12">
+            <div class="lg:col-span-7">
+              <h2 class="text-left text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+                Notre <span class="text-green-600">Mission</span>
+                <span class="mx-2 text-gray-400">—</span>
+                Notre <span class="text-yellow-600">Vision</span>
+              </h2>
 
-        <div class="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <!-- Histoire -->
-          <div v-reveal>
-            <div class="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
-              <h3 class="text-2xl font-bold text-gray-900 mb-6">Notre Parcours</h3>
-              <p class="text-gray-600 mb-6 leading-relaxed">
-                Fondée en 2018 après avoir obtenu son autonomie du bureau central de l'AMEST,
-                l'AMEST-Sahel a commencé comme un petit groupe d'étudiants maliens désireux
-                de créer un espace d'entraide et de partage.
+              <p class="mt-4 text-gray-700 max-w-prose leading-relaxed">
+                L'AMEST-Sahel œuvre pour créer un environnement favorable à l'épanouissement académique,
+                social et culturel des étudiants et stagiaires maliens en Tunisie. Nous croyons en une
+                communauté unie où l'entraide et le partage sont les clés de la réussite.
               </p>
-              <p class="text-gray-600 leading-relaxed">
-                Aujourd'hui, nous sommes une association dynamique qui œuvre pour le bien-être
-                et la réussite de la communauté étudiante malienne dans la région du Sahel tunisien.
-              </p>
-            </div>
-          </div>
 
-          <!-- Mission et Valeurs -->
-          <div v-reveal>
-            <div class="space-y-6">
-              <!-- Mission -->
-              <div class="bg-gradient-to-r from-mali-blue to-mali-green rounded-2xl p-6 text-white">
-                <h4 class="text-xl font-bold mb-3">🎯 Notre Mission</h4>
-                <p class="text-white/90">
-                  {{ associationInfo.mission }}
-                </p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <span class="inline-flex items-center rounded-lg border border-green-200 bg-white px-3 py-1 text-xs font-semibold text-green-700">Solidarité active</span>
+                <span class="inline-flex items-center rounded-lg border border-yellow-200 bg-white px-3 py-1 text-xs font-semibold text-yellow-700">Développement durable</span>
+                <span class="inline-flex items-center rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700">Éducation populaire</span>
               </div>
 
-              <!-- Valeurs -->
-              <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100">
-                <h4 class="text-xl font-bold text-gray-900 mb-4">💎 Nos Valeurs</h4>
-                <div class="grid grid-cols-2 gap-3">
-                  <div v-for="(value, index) in associationInfo.values" :key="index"
-                       class="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                    <div class="w-8 h-8 rounded-full bg-mali-gold/20 flex items-center justify-center">
-                      <span class="text-mali-gold text-sm font-bold">{{ index + 1 }}</span>
-                    </div>
-                    <span class="font-semibold text-gray-700">{{ value }}</span>
+              <div class="mt-6 grid gap-3">
+                <div>
+                  <div class="mb-1 flex items-center justify-between text-sm text-gray-700">
+                    <span>Étudiants accompagnés</span>
+                    <span class="font-extrabold text-green-600">98%</span>
+                  </div>
+                  <div class="relative h-2 w-full overflow-hidden rounded-full border border-green-200 bg-green-100">
+                    <span class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-green-500 to-green-600"
+                          style="width:98%"></span>
+                  </div>
+                </div>
+                <div>
+                  <div class="mb-1 flex items-center justify-between text-sm text-gray-700">
+                    <span>Satisfaction des membres</span>
+                    <span class="font-extrabold text-green-600">95%</span>
+                  </div>
+                  <div class="relative h-2 w-full overflow-hidden rounded-full border border-green-200 bg-green-100">
+                    <span class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-green-500 to-green-600"
+                          style="width:95%"></span>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Objectifs -->
-        <div class="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100" v-reveal>
-          <h3 class="text-2xl font-bold text-center text-gray-900 mb-12">🎯 Nos Objectifs</h3>
-          <div class="grid md:grid-cols-3 gap-8">
-            <div class="text-center" v-for="(goal, index) in [
-              'Développer des initiatives éducatives pour soutenir la réussite académique',
-              'Organiser des activités culturelles pour promouvoir le patrimoine malien',
-              'Créer des opportunités professionnelles et de networking'
-            ]" :key="index">
-              <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-mali-blue to-mali-green flex items-center justify-center text-white text-2xl">
-                {{ ['📚', '🎭', '💼'][index] }}
+              <div class="mt-6">
+                <Link :href="r('public.about', {}, false, '/a-propos')"
+                      class="inline-flex items-center justify-center rounded-xl border border-green-600 px-4 py-2 text-green-700 transition hover:bg-green-600 hover:text-white">
+                  Découvrir notre histoire
+                </Link>
               </div>
-              <h4 class="font-bold text-gray-900 mb-2">Objectif {{ index + 1 }}</h4>
-              <p class="text-gray-600 text-sm">{{ goal }}</p>
+            </div>
+
+            <div class="lg:col-span-5 relative">
+              <div class="pointer-events-none absolute right-[-52px] top-2 w-[220px] rotate-[35deg] transform-gpu bg-gradient-to-r from-green-600 to-yellow-500 text-white font-black tracking-wider text-center border border-white/25 shadow-lg">
+                <span class="block py-1.5">SOLIDARITÉ</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="relative rounded-xl border border-green-200 bg-white p-4 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div class="text-2xl font-black bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                    <span v-countup="150">150</span>+
+                  </div>
+                  <div class="mt-1 text-sm text-gray-600">Membres actifs</div>
+                </div>
+
+                <div class="relative rounded-xl border border-yellow-200 bg-white p-4 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div class="text-2xl font-black bg-gradient-to-r from-yellow-600 to-yellow-700 bg-clip-text text-transparent">
+                    <span v-countup="25">25</span>+
+                  </div>
+                  <div class="mt-1 text-sm text-gray-600">Activités annuelles</div>
+                </div>
+
+                <div class="relative rounded-xl border border-red-200 bg-white p-4 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div class="text-2xl font-black bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
+                    <span v-countup="6">6</span>+
+                  </div>
+                  <div class="mt-1 text-sm text-gray-600">Ans d'engagement</div>
+                </div>
+
+                <div class="relative rounded-xl border border-green-200 bg-white p-4 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div class="text-2xl font-black bg-gradient-to-r from-green-600 to-yellow-600 bg-clip-text text-transparent">
+                    <span v-countup="15">15</span>+
+                  </div>
+                  <div class="mt-1 text-sm text-gray-600">Partenariats</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -372,355 +268,263 @@ function getCategoryIcon(category: string) {
     </section>
 
     <!-- ACTIVITÉS -->
-    <section id="activites" class="py-20 bg-white">
+    <section id="activites" class="py-20 bg-gradient-to-br from-green-50 to-yellow-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" v-reveal>
-          <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Nos <span class="text-mali-green">Activités</span>
-          </h2>
-          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Découvrez les événements et activités qui rythment la vie de notre association
-            et renforcent les liens entre nos membres.
-          </p>
-        </div>
-
-        <!-- Activités à venir -->
-        <div class="mb-16" v-reveal>
-          <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Prochaines Activités</h3>
-          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div v-for="activity in activityList.slice(0, 6)" :key="activity.id"
-                 class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                 @mousemove="handleTilt" @mouseleave="resetTilt">
-              <div class="flex items-center justify-between mb-4">
-                <span class="text-2xl">{{ getCategoryIcon(activity.category) }}</span>
-                <span class="px-3 py-1 rounded-full text-xs font-semibold"
-                      :class="`bg-gradient-to-r ${getCategoryColor(activity.category)} text-white`">
-                  {{ activity.category }}
-                </span>
-              </div>
-              <h4 class="font-bold text-gray-900 mb-2">{{ activity.title }}</h4>
-              <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                <span>📅</span>
-                <span>{{ formatDate(activity.date) }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                <span>📍</span>
-                <span>{{ activity.location }}</span>
-              </div>
-              <p class="text-gray-600 text-sm">{{ activity.summary }}</p>
+        <h2 class="section-title text-gray-900" v-reveal>Nos <span class="text-green-600">Activités</span></h2>
+        <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div v-for="activity in [
+            { title: 'Journée d\'intégration', date: '01 Février 2025', location: 'Mahdia', category: 'social' },
+            { title: 'Sortie au Zoo de Friguia', date: '22 Février 2025', location: 'Friguia', category: 'culture' },
+            { title: 'Rupture de jeûne Sousse', date: '15 Mars 2025', location: 'Sousse', category: 'social' },
+            { title: 'Rupture de jeûne Mahdia', date: '22 Mars 2025', location: 'Mahdia', category: 'social' },
+            { title: 'La nuit des communautés', date: '12 Avril 2025', location: 'Sousse', category: 'culture' },
+            { title: 'Formation Power BI', date: '26 Avril 2025', location: 'Sousse', category: 'education' }
+          ]" :key="activity.title"
+               class="bg-white rounded-2xl p-6 shadow-lg border border-green-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+               v-reveal>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-2xl">
+                {{ activity.category === 'social' ? '🤝' : activity.category === 'culture' ? '🎭' : '📚' }}
+              </span>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                    :class="activity.category === 'social' ? 'bg-green-100 text-green-700' : activity.category === 'culture' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'">
+                {{ activity.category === 'social' ? 'Social' : activity.category === 'culture' ? 'Culture' : 'Éducation' }}
+              </span>
             </div>
-          </div>
-        </div>
-
-        <!-- Galerie photos -->
-        <div v-reveal>
-          <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Galerie Photos</h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div v-for="i in 8" :key="i"
-                 class="aspect-square bg-gray-200 rounded-2xl flex items-center justify-center text-gray-400">
-              <span class="text-sm">Photo {{ i }}</span>
+            <h4 class="font-bold text-gray-900 mb-2">{{ activity.title }}</h4>
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+              <span>📅</span>
+              <span>{{ activity.date }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span>📍</span>
+              <span>{{ activity.location }}</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ÉQUIPE -->
-    <section id="equipe" class="py-20 bg-gray-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" v-reveal>
-          <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Notre <span class="text-mali-gold">Équipe</span>
-          </h2>
-          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Découvrez les membres dévoués qui font vivre l'association au quotidien
-            et travaillent pour le bien-être de la communauté.
-          </p>
-        </div>
-
-        <!-- Bureau exécutif -->
-        <div class="mb-16" v-reveal>
-          <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Bureau Exécutif</h3>
-          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div v-for="member in teamList.slice(0, 6)" :key="member.email"
-                 class="bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-              <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-mali-blue to-mali-green rounded-2xl flex items-center justify-center text-white text-xl font-bold">
-                {{ member.name.split(' ').map(n => n[0]).join('') }}
-              </div>
-              <h4 class="font-bold text-gray-900 mb-1">{{ member.name }}</h4>
-              <p class="text-mali-blue font-semibold text-sm mb-2">{{ member.role }}</p>
-              <p class="text-gray-600 text-xs mb-3">{{ member.formation }}</p>
-              <a :href="`mailto:${member.email}`" class="text-mali-green text-sm hover:underline">
-                {{ member.email }}
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Anciens présidents -->
-        <div v-reveal>
-          <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Anciens Présidents</h3>
-          <div class="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div v-for="president in presidentsList" :key="president.name"
-                   class="text-center p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors">
-                <div class="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-mali-gold to-orange-500 rounded-2xl flex items-center justify-center text-white">
-                  <span class="text-xl">👑</span>
-                </div>
-                <h4 class="font-bold text-gray-900 mb-1">{{ president.name }}</h4>
-                <p class="text-mali-blue text-sm">{{ president.mandate }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CONTACT -->
+    <!-- NOUS CONTACTER -->
     <section id="contact" class="py-20 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16" v-reveal>
-          <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Restons <span class="text-mali-blue">Connectés</span>
-          </h2>
-          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Rejoignez notre communauté ou contactez-nous pour plus d'informations.
-            Nous sommes toujours ravis d'accueillir de nouveaux membres !
-          </p>
-        </div>
+        <h2 class="section-title text-gray-900" v-reveal>Nous <span class="text-green-600">Contacter</span></h2>
 
-        <div class="grid lg:grid-cols-2 gap-12">
+        <div class="mt-8 grid lg:grid-cols-2 gap-8">
           <!-- Informations de contact -->
-          <div v-reveal>
-            <div class="bg-gradient-to-br from-mali-blue to-mali-green rounded-3xl p-8 text-white">
-              <h3 class="text-2xl font-bold mb-6">📞 Nous Contacter</h3>
+          <div class="card-contact" v-reveal>
+            <h3 class="text-2xl font-bold text-gray-900 mb-6">📞 Restons en contact</h3>
 
-              <div class="space-y-4 mb-8">
-                <div class="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm">
-                  <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <span class="text-xl">📧</span>
-                  </div>
-                  <div>
-                    <div class="font-semibold">Email</div>
-                    <a :href="`mailto:${associationInfo.contact.email}`" class="text-white/90 hover:text-white">
-                      {{ associationInfo.contact.email }}
-                    </a>
-                  </div>
+            <div class="space-y-4 mb-8">
+              <div class="flex items-center gap-4 p-4 bg-green-50 rounded-2xl border border-green-200">
+                <div class="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center text-white">
+                  <span class="text-xl">📧</span>
                 </div>
-
-                <div class="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm">
-                  <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <span class="text-xl">📱</span>
-                  </div>
-                  <div>
-                    <div class="font-semibold">Téléphone</div>
-                    <a :href="`tel:${associationInfo.contact.phone}`" class="text-white/90 hover:text-white">
-                      {{ associationInfo.contact.phone }}
-                    </a>
-                  </div>
+                <div>
+                  <div class="font-semibold text-gray-900">Email</div>
+                  <a href="mailto:amestsahel04@gmail.com" class="text-green-700 hover:text-green-800">
+                    amestsahel04@gmail.com
+                  </a>
                 </div>
               </div>
 
-              <h4 class="text-xl font-bold mb-4">🌐 Nos Réseaux</h4>
-              <div class="grid grid-cols-3 gap-4">
-                <a href="#" class="bg-white/10 rounded-2xl p-4 text-center backdrop-blur-sm hover:bg-white/20 transition-colors">
-                  <div class="text-2xl mb-2">📘</div>
-                  <div class="text-sm">Facebook</div>
-                </a>
-                <a href="#" class="bg-white/10 rounded-2xl p-4 text-center backdrop-blur-sm hover:bg-white/20 transition-colors">
-                  <div class="text-2xl mb-2">📷</div>
-                  <div class="text-sm">Instagram</div>
-                </a>
-                <a href="#" class="bg-white/10 rounded-2xl p-4 text-center backdrop-blur-sm hover:bg-white/20 transition-colors">
-                  <div class="text-2xl mb-2">📺</div>
-                  <div class="text-sm">YouTube</div>
-                </a>
+              <div class="flex items-center gap-4 p-4 bg-yellow-50 rounded-2xl border border-yellow-200">
+                <div class="w-12 h-12 bg-yellow-500 rounded-2xl flex items-center justify-center text-white">
+                  <span class="text-xl">📱</span>
+                </div>
+                <div>
+                  <div class="font-semibold text-gray-900">Téléphone</div>
+                  <a href="tel:24282332" class="text-yellow-700 hover:text-yellow-800">
+                    24 282 332
+                  </a>
+                </div>
               </div>
+
+              <div class="flex items-center gap-4 p-4 bg-red-50 rounded-2xl border border-red-200">
+                <div class="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white">
+                  <span class="text-xl">📍</span>
+                </div>
+                <div>
+                  <div class="font-semibold text-gray-900">Localisation</div>
+                  <span class="text-red-700">Tunisie - Région Sahel</span>
+                </div>
+              </div>
+            </div>
+
+            <h4 class="text-xl font-bold mb-4 text-gray-900">🌐 Nos Réseaux</h4>
+            <div class="grid grid-cols-3 gap-4">
+              <a href="#" class="bg-green-100 rounded-2xl p-4 text-center border border-green-200 hover:bg-green-200 transition-colors">
+                <div class="text-2xl mb-2">📘</div>
+                <div class="text-sm text-green-700">Facebook</div>
+              </a>
+              <a href="#" class="bg-yellow-100 rounded-2xl p-4 text-center border border-yellow-200 hover:bg-yellow-200 transition-colors">
+                <div class="text-2xl mb-2">📷</div>
+                <div class="text-sm text-yellow-700">Instagram</div>
+              </a>
+              <a href="#" class="bg-red-100 rounded-2xl p-4 text-center border border-red-200 hover:bg-red-200 transition-colors">
+                <div class="text-2xl mb-2">📺</div>
+                <div class="text-sm text-red-700">YouTube</div>
+              </a>
             </div>
           </div>
 
           <!-- Formulaire de contact -->
-          <div v-reveal>
-            <div class="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
-              <h3 class="text-2xl font-bold text-gray-900 mb-6">💬 Envoyer un message</h3>
+          <div class="card-contact" v-reveal>
+            <h3 class="text-2xl font-bold text-gray-900 mb-6">💬 Envoyez-nous un message</h3>
 
-              <form @submit.prevent="submitContact" class="space-y-6">
-                <div v-if="successMsg" class="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-700">
-                  {{ successMsg }}
-                </div>
+            <form @submit.prevent="submitContact" class="space-y-6">
+              <div v-if="successMsg" class="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-700">
+                {{ successMsg }}
+              </div>
 
-                <div class="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Votre nom</label>
-                    <input v-model="cForm.name" type="text" required
-                           class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-mali-blue focus:ring-2 focus:ring-mali-blue/20 transition-all">
-                  </div>
-                  <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Votre email</label>
-                    <input v-model="cForm.email" type="email" required
-                           class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-mali-blue focus:ring-2 focus:ring-mali-blue/20 transition-all">
-                  </div>
-                </div>
-
+              <div class="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Sujet</label>
-                  <select v-model="cForm.subject" required
-                          class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-mali-blue focus:ring-2 focus:ring-mali-blue/20 transition-all">
-                    <option value="">Choisir un sujet</option>
-                    <option>Devenir membre</option>
-                    <option>Participer aux activités</option>
-                    <option>Demande d'information</option>
-                    <option>Partenariat</option>
-                    <option>Autre</option>
-                  </select>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Votre nom</label>
+                  <input v-model="cForm.name" type="text" required
+                         class="w-full px-4 py-3 rounded-2xl border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
                 </div>
-
                 <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Votre message</label>
-                  <textarea v-model="cForm.message" rows="5" required
-                            class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-mali-blue focus:ring-2 focus:ring-mali-blue/20 transition-all"></textarea>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Votre email</label>
+                  <input v-model="cForm.email" type="email" required
+                         class="w-full px-4 py-3 rounded-2xl border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
                 </div>
+              </div>
 
-                <input v-model="cForm.hp" type="text" class="sr-only" tabindex="-1" autocomplete="off">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Sujet</label>
+                <select v-model="cForm.subject" required
+                        class="w-full px-4 py-3 rounded-2xl border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
+                  <option value="">Choisir un sujet</option>
+                  <option>Devenir membre</option>
+                  <option>Participer aux activités</option>
+                  <option>Demande d'information</option>
+                  <option>Partenariat</option>
+                  <option>Autre</option>
+                </select>
+              </div>
 
-                <button type="submit" :disabled="cForm.processing"
-                        class="w-full bg-gradient-to-r from-mali-blue to-mali-green text-white py-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50">
-                  {{ cForm.processing ? 'Envoi en cours...' : 'Envoyer le message' }}
-                </button>
-              </form>
-            </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Votre message</label>
+                <textarea v-model="cForm.message" rows="5" required
+                          class="w-full px-4 py-3 rounded-2xl border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"></textarea>
+              </div>
+
+              <input v-model="cForm.hp" type="text" class="sr-only" tabindex="-1" autocomplete="off">
+
+              <button type="submit" :disabled="cForm.processing"
+                      class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50">
+                {{ cForm.processing ? 'Envoi en cours...' : 'Envoyer le message' }}
+              </button>
+            </form>
           </div>
         </div>
       </div>
     </section>
-
-    <!-- FOOTER -->
-    <footer class="bg-gray-900 text-white py-12">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid md:grid-cols-4 gap-8">
-          <div>
-            <h3 class="text-2xl font-bold text-mali-gold mb-4">AMEST-Sahel</h3>
-            <p class="text-gray-400 text-sm">
-              Association Malienne des Étudiants et Stagiaires en Tunisie section Sahel
-            </p>
-          </div>
-
-          <div>
-            <h4 class="font-semibold mb-4">Liens Rapides</h4>
-            <div class="space-y-2 text-sm text-gray-400">
-              <a href="#apropos" class="block hover:text-mali-gold transition-colors">À propos</a>
-              <a href="#activites" class="block hover:text-mali-gold transition-colors">Activités</a>
-              <a href="#equipe" class="block hover:text-mali-gold transition-colors">Équipe</a>
-              <a href="#contact" class="block hover:text-mali-gold transition-colors">Contact</a>
-            </div>
-          </div>
-
-          <div>
-            <h4 class="font-semibold mb-4">Contact</h4>
-            <div class="space-y-2 text-sm text-gray-400">
-              <div>{{ associationInfo.contact.email }}</div>
-              <div>{{ associationInfo.contact.phone }}</div>
-            </div>
-          </div>
-
-          <div>
-            <h4 class="font-semibold mb-4">Suivez-nous</h4>
-            <div class="flex gap-4">
-              <a href="#" class="w-10 h-10 bg-gray-800 rounded-2xl flex items-center justify-center hover:bg-mali-blue transition-colors">
-                <span class="text-lg">📘</span>
-              </a>
-              <a href="#" class="w-10 h-10 bg-gray-800 rounded-2xl flex items-center justify-center hover:bg-mali-green transition-colors">
-                <span class="text-lg">📷</span>
-              </a>
-              <a href="#" class="w-10 h-10 bg-gray-800 rounded-2xl flex items-center justify-center hover:bg-mali-gold transition-colors">
-                <span class="text-lg">📺</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>&copy; 2024 AMEST-Sahel. Tous droits réservés.</p>
-        </div>
-      </div>
-    </footer>
   </PublicLayout>
 </template>
 
 <style scoped>
-/* Variables CSS pour les couleurs du Mali */
-:root {
-  --mali-blue: #3b82f6;
-  --mali-green: #10b981;
-  --mali-gold: #f59e0b;
-  --mali-red: #ef4444;
+/* Styles pour la page AMEST-Sahel */
+.section-title {
+  position: relative;
+  display: block;
+  width: 100%;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -.01em;
+  font-size: clamp(1.65rem, 2vw + 1rem, 2.25rem);
+  margin-bottom: 3rem;
 }
 
-.text-mali-blue { color: var(--mali-blue); }
-.text-mali-green { color: var(--mali-green); }
-.text-mali-gold { color: var(--mali-gold); }
-.text-mali-red { color: var(--mali-red); }
+.section-title::after {
+  content: "";
+  display: block;
+  height: 2px;
+  width: 110px;
+  margin: .7rem auto 0;
+  background: linear-gradient(90deg, #059669, #d97706, #dc2626);
+  opacity: .85;
+  border-radius: 999px;
+}
 
-.bg-mali-blue { background-color: var(--mali-blue); }
-.bg-mali-green { background-color: var(--mali-green); }
-.bg-mali-gold { background-color: var(--mali-gold); }
-.bg-mali-red { background-color: var(--mali-red); }
-
-/* Boutons */
-.btn-primary {
+.tag-ghost {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, var(--mali-blue), var(--mali-green));
-  color: white;
-  padding: 1rem 2rem;
-  border-radius: 1rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  gap: .4rem;
+  padding: .3rem .6rem;
+  border-radius: .55rem;
+  font-weight: 800;
+  font-size: .75rem;
+  color: #ffffff;
+  background: rgba(255, 255, 255, .10);
+  border: 1px solid rgba(255, 255, 255, .20);
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-}
-
-.btn-secondary {
+.btn-outline-yellow {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  padding: 1rem 2rem;
+  justify-content: center;
+  padding: .8rem 1.15rem;
   border-radius: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, .30);
+  transition: all .2s;
+}
+
+.btn-outline-yellow:hover {
+  background: rgba(255, 255, 255, .10);
+  transform: translateY(-1px);
+}
+
+.btn-ghost-light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .75rem 1.05rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, .30);
+  color: #ffffff;
+  transition: border-color .2s, transform .2s;
+}
+
+.btn-ghost-light:hover {
+  border-color: rgba(255, 255, 255, .60);
+  transform: translateY(-1px);
+}
+
+.chip-light {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .45rem .7rem;
+  border-radius: .7rem;
+  color: #ffffff;
   font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: .9rem;
+  background: rgba(255, 255, 255, .10);
+  border: 1px solid rgba(255, 255, 255, .20);
 }
 
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+.card-contact {
+  background: white;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 10px 40px -20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
-/* Animations reveal */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: translateY(12px) scale(.985);
+  filter: blur(2px);
+  transition: all .6s cubic-bezier(.2,.8,.2,1);
 }
 
 .reveal.is-visible {
   opacity: 1;
-  transform: translateY(0);
-}
-
-/* Effets de tilt pour les cartes */
-.card-iso {
-  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.2s ease-out;
+  transform: none;
+  filter: none;
 }
 </style>
