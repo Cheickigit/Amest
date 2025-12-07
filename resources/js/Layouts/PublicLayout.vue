@@ -15,6 +15,7 @@ const FALLBACKS: Record<string, string> = {
   'public.about': '/a-propos',
   'public.posts': '/actualites',
   'public.announcements': '/annonces-archives',
+  'announcements-archive': '/annonces-archives',
   'public.team': '/equipe',
   'public.contact': '/contact',
   login: '/login',
@@ -67,9 +68,9 @@ const lastDeltaDown = ref(false)
 const headerHover = ref(false)
 
 /* Contact AMEST-Sahel */
-const phoneDisplay = ref('24 282 332')
-const phoneHref    = ref('tel:24282332')
-const whatsappHref = ref('https://wa.me/21224282332')
+const phoneDisplay = ref('+216 24 282 332')
+const phoneHref    = ref('tel:+21624282332')
+const whatsappHref = ref('https://wa.me/21624282332')
 const email        = ref('amestsahel04@gmail.com')
 const city         = ref('Tunisie - Région Sahel')
 
@@ -225,12 +226,11 @@ onBeforeUnmount(() => {
             <Link :href="r('home')"            :class="['nav-pill', isActive('home') ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('home') ? 'page' : undefined">Accueil</Link>
             <Link :href="r('public.about')"    :class="['nav-pill', isActive('public.about') ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('public.about') ? 'page' : undefined">À propos</Link>
             <Link :href="r('public.posts')" :class="['nav-pill', isActive('public.posts', true) ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('public.posts', true) ? 'page' : undefined">Activités</Link>
-            <Link :href="r('public.announcements')"
-
-                :class="['nav-pill', isActive('public.announcements', true) ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']"
-                :aria-current="isActive('public.announcements', true) ? 'page' : undefined">
+            <Link :href="r('announcements-archive')"
+                :class="['nav-pill', isActive('announcements-archive', true) ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']"
+                :aria-current="isActive('announcements-archive', true) ? 'page' : undefined">
                 Annonces & Archives
-            </Link>
+             </Link>
 
             <Link :href="r('public.contact')"  :class="['nav-pill', isActive('public.contact') ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-700 hover:text-green-700 hover:bg-green-50']" :aria-current="isActive('public.contact') ? 'page' : undefined">Contact</Link>
           </nav>

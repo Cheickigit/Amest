@@ -1,186 +1,338 @@
 <!-- resources/js/Pages/Public/Contact.vue -->
-<script setup lang="ts">
-import PublicLayout from '@/Layouts/PublicLayout.vue'
-import { Link } from '@inertiajs/vue3'
-import { route as ziggyRoute } from 'ziggy-js'
-
-/* Helper route robuste (Ziggy + fallback) */
-function r(name: string, params?: any, absolute = false, fallback: string = '#') {
-  try {
-    const Z = (globalThis as any)?.Ziggy
-    if (!Z) return fallback
-    return ziggyRoute(name, params ?? {}, absolute, Z)
-  } catch { return fallback }
-}
-
-/* v-reveal minimal */
-let io:IntersectionObserver|null = null
-const vReveal = {
-  mounted(el:HTMLElement){
-    el.classList.add('reveal')
-    if(!io){
-      io = new IntersectionObserver((entries)=>{
-        entries.forEach(e=>{
-          if(e.isIntersecting){ e.target.classList.add('is-visible'); io?.unobserve(e.target) }
-        })
-      },{threshold:.14})
-    }
-    io.observe(el)
-  }
-}
-</script>
-
 <template>
   <PublicLayout>
-    <!-- HERO (3D à gauche, texte à droite) -->
-    <section class="relative overflow-hidden pt-14 md:pt-20 pb-10 md:pb-14">
-      <div class="hero-ribbon" aria-hidden="true"></div>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-12 gap-8 items-center">
-        <!-- 3D -->
-        <div class="lg:col-span-6 relative order-first" v-reveal>
-          <div class="hero-halo" aria-hidden="true"></div>
-          <div class="contact3d" aria-hidden="true">
-            <!-- sol -->
-            <div class="grid-floor"></div>
-
-            <!-- balise / beacon -->
-            <div class="beacon">
-              <div class="stem"></div>
-              <div class="head"></div>
-              <div class="ring r1"></div>
-              <div class="ring r2"></div>
-              <div class="ring r3"></div>
-              <div class="ping"></div>
-            </div>
-
-            <!-- enveloppe flottante -->
-            <div class="mail">
-              <div class="env"></div>
-              <div class="flap"></div>
-              <div class="shadow"></div>
-            </div>
-
-            <!-- bulles icônes -->
-            <div class="badge b1"><span class="i i-phone"></span></div>
-            <div class="badge b2"><span class="i i-mail"></span></div>
-            <div class="badge b3"><span class="i i-pin"></span></div>
-          </div>
-        </div>
-
-        <!-- Texte -->
-        <div class="lg:col-span-6" v-reveal>
-          <span class="tag-ghost">Contact</span>
-          <h1 class="mt-3 text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
-            Entrons en <span class="text-bk-gold">contact</span>
+    <!-- HERO SECTION AVEC DRAPEAU MALI -->
+    <section class="relative overflow-hidden pt-20 md:pt-28 pb-16 bg-gradient-to-r from-red-600 via-yellow-400 to-green-600">
+      <div class="absolute inset-0 bg-black/20"></div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center" v-reveal>
+          <span class="inline-flex items-center px-4 py-2 rounded-full bg-white/20 border border-white/30 text-white text-sm font-semibold mb-6">
+            Contactez-nous
+          </span>
+          <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            <span class="drop-shadow-lg">Contact</span>
           </h1>
-          <p class="mt-4 text-white/80 max-w-2xl">
-            Basés en Tunisie, nous répondons sous 24h ouvrées. Dites-nous votre besoin — on vous propose un accompagnement personnalisé.
+          <p class="text-xl md:text-2xl text-white/95 max-w-4xl mx-auto leading-relaxed font-medium">
+            Une question ? Une suggestion ? Nous sommes là pour vous écouter !
           </p>
-
-          <div class="mt-6 flex flex-wrap gap-2">
-            <span class="chip">Solidarité</span><span class="chip">Engagement</span><span class="chip">Excellence</span><span class="chip">Entraide</span>
-          </div>
-
-          <div class="mt-7 flex flex-col sm:flex-row gap-3">
-            <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Activités & Événements</Link>
-            <a href="https://wa.me/21624282332" target="_blank" rel="noopener" class="btn-ghost">WhatsApp</a>
-          </div>
+          <p class="text-lg text-white/90 max-w-3xl mx-auto mt-6 leading-relaxed">
+            L'AMEST-Sahel reste à votre écoute pour toute question concernant l'association,
+            les activités ou l'intégration des étudiants maliens en Tunisie.
+          </p>
         </div>
       </div>
     </section>
 
-    <!-- CARTES PRATIQUES -->
-    <section class="py-8 md:py-12" v-reveal>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-6 lg:grid-cols-12">
-        <!-- Coordonnées -->
-        <div class="lg:col-span-4">
-          <div class="card ring-gold p-6 md:p-7">
-            <h2 class="section-title text-left">Coordonnées</h2>
-            <ul class="mt-4 space-y-3 text-white/85">
-              <li class="flex items-center gap-3"><span class="i i-phone"></span><a href="tel:+21624282332" class="hover:text-bk-gold font-semibold">+216 24 282 332</a></li>
-              <li class="flex items-center gap-3"><span class="i i-mail"></span><a href="mailto:amestsahel04@gmail.com" class="hover:text-bk-gold">amestsahel04@gmail.com</a></li>
-              <li class="flex items-center gap-3"><span class="i i-pin"></span><span>Tunisie - Région du Sahel</span></li>
-              <li class="flex items-center gap-3"><span class="i i-clock"></span><span>Lun–Ven : 9h – 17h</span></li>
-            </ul>
-            <div class="grid grid-cols-3 gap-2 pt-4">
-              <a href="tel:+21624282332" class="btn-outline-gold sm w-full justify-center">Appeler</a>
-              <a href="https://wa.me/21624282332" target="_blank" rel="noopener" class="btn-ghost sm w-full justify-center">WhatsApp</a>
-              <a href="mailto:amestsahel04@gmail.com" class="btn-ghost sm w-full justify-center">Email</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Atouts + Zones -->
-        <div class="lg:col-span-8 grid gap-6 md:grid-cols-2">
-          <div class="card ring-gold p-6 md:p-7">
-            <h3 class="text-xl font-extrabold">Pourquoi AMEST-Sahel ?</h3>
-            <div class="mini-bullets mt-3">
-              <span>✔️ Solidarité entre étudiants maliens</span>
-              <span>✔️ Développement académique & professionnel</span>
-              <span>✔️ Activités socioculturelles enrichissantes</span>
-              <span>✔️ Promotion de la culture malienne</span>
-            </div>
-            <div class="mt-5">
-              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Voir nos activités</Link>
-            </div>
-          </div>
-
-          <div class="card ring-gold p-6 md:p-7">
-            <h3 class="text-xl font-extrabold">Nos Domaines d'Action</h3>
-            <p class="text-white/80 mt-2">Événements éducatifs, culturels, sportifs et initiatives de développement pour la communauté étudiante malienne en Tunisie.</p>
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span class="badge-ghost">Éducatif</span>
-              <span class="badge-ghost">Culturel</span>
-              <span class="badge-ghost">Sportif</span>
-              <span class="badge-ghost">Social</span>
-              <span class="badge-ghost">Intégration</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- GOOGLE MAPS (embed “vrai”) -->
-    <section class="py-8 md:py-12" v-reveal>
+    <!-- CONTENU PRINCIPAL -->
+    <section class="py-16 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="section-title">Nous trouver</h2>
-        <div class="mt-6 card ring-gold overflow-hidden relative">
-          <div class="map-wrap">
-            <iframe
-              class="absolute inset-0 w-full h-full"
-              title="Localisation AMEST-Sahel"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps?q=Tunisie+Sahel&output=embed">
-            </iframe>
+        <div class="grid lg:grid-cols-2 gap-12">
+          <!-- Formulaire de contact -->
+          <div v-reveal>
+            <div class="mb-8">
+              <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                Envoyez-nous un <span class="text-green-600">message</span>
+              </h2>
+              <p class="text-gray-600">
+                Remplissez ce formulaire et nous vous répondrons dans les plus brefs délais.
+              </p>
+            </div>
+
+            <form @submit.prevent="submitForm" class="space-y-6">
+              <!-- Nom complet -->
+              <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                  Nom complet *
+                </label>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  id="name"
+                  required
+                  placeholder="Votre nom complet"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                >
+                <p v-if="errors.name" class="text-red-600 text-sm mt-2">{{ errors.name }}</p>
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                  Adresse email *
+                </label>
+                <input
+                  v-model="form.email"
+                  type="email"
+                  id="email"
+                  required
+                  placeholder="votre@email.com"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                >
+                <p v-if="errors.email" class="text-red-600 text-sm mt-2">{{ errors.email }}</p>
+              </div>
+
+              <!-- Téléphone -->
+              <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                  Téléphone
+                </label>
+                <input
+                  v-model="form.phone"
+                  type="tel"
+                  id="phone"
+                  placeholder="+216 XX XXX XXX"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                >
+              </div>
+
+              <!-- Sujet -->
+              <div>
+                <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">
+                  Sujet *
+                </label>
+                <select
+                  v-model="form.subject"
+                  id="subject"
+                  required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition bg-white"
+                >
+                  <option value="">Sélectionnez un sujet</option>
+                  <option value="adhesion">Adhésion à l'association</option>
+                  <option value="evenement">Information sur un événement</option>
+                  <option value="aide">Demande d'aide ou de soutien</option>
+                  <option value="partenariat">Proposition de partenariat</option>
+                  <option value="autre">Autre demande</option>
+                </select>
+              </div>
+
+              <!-- Message -->
+              <div>
+                <label for="message" class="block text-sm font-medium text-gray-700 mb-2">
+                  Message *
+                </label>
+                <textarea
+                  v-model="form.message"
+                  id="message"
+                  rows="6"
+                  required
+                  placeholder="Votre message..."
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition resize-none"
+                ></textarea>
+                <p v-if="errors.message" class="text-red-600 text-sm mt-2">{{ errors.message }}</p>
+              </div>
+
+              <!-- Bouton d'envoi -->
+              <div>
+                <button
+                  type="submit"
+                  :disabled="loading"
+                  class="w-full bg-gradient-to-r from-red-600 to-yellow-500 text-white font-medium py-4 px-6 rounded-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span v-if="loading">Envoi en cours...</span>
+                  <span v-else class="flex items-center justify-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                    Envoyer le message
+                  </span>
+                </button>
+              </div>
+
+              <!-- Message de succès -->
+              <div v-if="successMessage" class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <span class="text-green-600">✓</span>
+                  </div>
+                  <div>
+                    <p class="text-green-800 font-medium">{{ successMessage }}</p>
+                    <p class="text-green-600 text-sm mt-1">Nous vous répondrons dans les 48h.</p>
+                  </div>
+                </div>
+              </div>
+            </form>
           </div>
-          <div class="p-4 flex items-center justify-between gap-3">
-            <div class="text-white/80 text-sm">Tunisie - Région du Sahel — Siège de l'association étudiante.</div>
-            <a
-              class="btn-ghost"
-              target="_blank"
-              rel="noopener"
-              href="https://www.google.com/maps/search/?api=1&query=Tunisie+Sahel"
-            >Ouvrir dans Google Maps</a>
+
+          <!-- Informations de contact -->
+          <div class="space-y-8" v-reveal>
+            <!-- Coordonnées -->
+            <div class="bg-gradient-to-br from-red-50 to-yellow-50 rounded-2xl p-8 border border-red-200">
+              <h3 class="text-2xl font-bold text-gray-900 mb-6">
+                Nos <span class="text-green-600">coordonnées</span>
+              </h3>
+
+              <div class="space-y-6">
+                <!-- Email -->
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <span class="text-red-600 text-xl">📧</span>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-1">Email</h4>
+                    <a href="mailto:amestsahel04@gmail.com" class="text-gray-700 hover:text-red-600 transition">
+                      amestsahel04@gmail.com
+                    </a>
+                    <p class="text-gray-500 text-sm mt-1">Réponse sous 48h</p>
+                  </div>
+                </div>
+
+                <!-- Téléphone -->
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                    <span class="text-yellow-600 text-xl">📱</span>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-1">Téléphone</h4>
+                    <a href="tel:+21624282332" class="text-gray-700 hover:text-red-600 transition">
+                      +216 24 28 23 32
+                    </a>
+                    <p class="text-gray-500 text-sm mt-1">Lun-Ven: 9h-17h</p>
+                  </div>
+                </div>
+
+                <!-- Adresse -->
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <span class="text-green-600 text-xl">📍</span>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-1">Localisation</h4>
+                    <p class="text-gray-700">Région du Sahel, Tunisie</p>
+                    <p class="text-gray-500 text-sm mt-1">Sousse • Mahdia • Monastir</p>
+                  </div>
+                </div>
+
+                <!-- Réseaux sociaux -->
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <span class="text-blue-600 text-xl">🌐</span>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">Réseaux sociaux</h4>
+                    <div class="flex gap-4">
+                      <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-red-100 transition">
+                        <span class="text-gray-700 hover:text-red-600">📘</span>
+                      </a>
+                      <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-blue-100 transition">
+                        <span class="text-gray-700 hover:text-blue-400">🐦</span>
+                      </a>
+                      <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-pink-100 transition">
+                        <span class="text-gray-700 hover:text-pink-600">📸</span>
+                      </a>
+                      <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-blue-200 transition">
+                        <span class="text-gray-700 hover:text-blue-700">💼</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ rapide -->
+            <div class="bg-gradient-to-br from-green-50 to-yellow-50 rounded-2xl p-8 border border-green-200">
+              <h3 class="text-2xl font-bold text-gray-900 mb-6">
+                Questions <span class="text-red-600">fréquentes</span>
+              </h3>
+
+              <div class="space-y-4">
+                <details class="group">
+                  <summary class="flex items-center justify-between cursor-pointer p-3 bg-white rounded-lg hover:bg-gray-50 transition">
+                    <span class="font-medium text-gray-900">Comment adhérer à l'association ?</span>
+                    <span class="text-gray-500 group-open:rotate-180 transition">▼</span>
+                  </summary>
+                  <div class="p-3 bg-white/50 rounded-lg mt-2">
+                    <p class="text-gray-700 text-sm">
+                      Remplissez le formulaire d'adhésion en ligne ou contactez-nous directement.
+                      Les frais d'adhésion annuels sont de 30 DT.
+                    </p>
+                  </div>
+                </details>
+
+                <details class="group">
+                  <summary class="flex items-center justify-between cursor-pointer p-3 bg-white rounded-lg hover:bg-gray-50 transition">
+                    <span class="font-medium text-gray-900">Qui peut participer aux activités ?</span>
+                    <span class="text-gray-500 group-open:rotate-180 transition">▼</span>
+                  </summary>
+                  <div class="p-3 bg-white/50 rounded-lg mt-2">
+                    <p class="text-gray-700 text-sm">
+                      Tous les étudiants et stagiaires maliens résidant dans la région du Sahel
+                      peuvent participer à nos activités. Certains événements sont ouverts au public.
+                    </p>
+                  </div>
+                </details>
+
+                <details class="group">
+                  <summary class="flex items-center justify-between cursor-pointer p-3 bg-white rounded-lg hover:bg-gray-50 transition">
+                    <span class="font-medium text-gray-900">Quels sont les horaires du bureau ?</span>
+                    <span class="text-gray-500 group-open:rotate-180 transition">▼</span>
+                  </summary>
+                  <div class="p-3 bg-white/50 rounded-lg mt-2">
+                    <p class="text-gray-700 text-sm">
+                      Notre bureau est ouvert du lundi au vendredi de 9h à 17h.
+                      Pour les réunions, veuillez prendre rendez-vous à l'avance.
+                    </p>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <!-- Carte de localisation -->
+            <div class="bg-gradient-to-br from-blue-50 to-yellow-50 rounded-2xl p-8 border border-blue-200">
+              <h3 class="text-2xl font-bold text-gray-900 mb-6">
+                Notre <span class="text-green-600">zone d'action</span>
+              </h3>
+
+              <div class="aspect-video rounded-lg overflow-hidden bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 flex items-center justify-center">
+                <div class="text-center text-white p-6">
+                  <div class="text-4xl mb-4">🗺️</div>
+                  <p class="font-semibold">Région du Sahel Tunisien</p>
+                  <p class="text-white/80 text-sm mt-2">Sousse • Mahdia • Monastir</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 mt-6">
+                <div class="text-center">
+                  <div class="text-2xl mb-2">🎓</div>
+                  <p class="font-medium text-gray-900">500+</p>
+                  <p class="text-gray-600 text-sm">Étudiants</p>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl mb-2">🏙️</div>
+                  <p class="font-medium text-gray-900">3</p>
+                  <p class="text-gray-600 text-sm">Villes</p>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl mb-2">📅</div>
+                  <p class="font-medium text-gray-900">20+</p>
+                  <p class="text-gray-600 text-sm">Événements/an</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CTA BAS DE PAGE -->
-    <section class="py-10 md:py-14" v-reveal>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="footer-card gradient-ring p-6 md:p-8 rounded-2xl relative overflow-hidden">
-          <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
-          <div class="grid md:grid-cols-3 gap-5 items-center">
-            <div class="md:col-span-2">
-              <h3 class="text-2xl md:text-3xl font-extrabold">Rejoignez notre communauté ?</h3>
-              <p class="text-white/80 mt-2">Étudiant malien en Tunisie ? Contactez-nous pour intégrer l'association et participer à nos activités.</p>
+    <!-- BANDEAU URGENCE -->
+    <section class="bg-gradient-to-r from-red-600 to-yellow-500 text-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6" v-reveal>
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+              <span class="text-2xl">🚨</span>
             </div>
-            <div class="flex gap-3 md:justify-end">
-              <Link :href="r('public.rfp', {}, false, '/appels-d-offres')" class="btn-outline-gold">Nos activités</Link>
-              <a href="https://wa.me/21624282332" target="_blank" rel="noopener" class="btn-ghost">WhatsApp</a>
+            <div>
+              <h3 class="font-bold text-lg">Urgence étudiante ?</h3>
+              <p class="text-white/90 text-sm">Nous sommes là pour vous aider 24h/24</p>
             </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <a href="tel:+21624282332" class="bg-white text-red-600 font-bold px-6 py-3 rounded-lg hover:bg-gray-100 transition">
+              📞 Appeler l'urgence
+            </a>
+            <a href="#" class="border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition">
+              Voir les procédures
+            </a>
           </div>
         </div>
       </div>
@@ -188,112 +340,163 @@ const vReveal = {
   </PublicLayout>
 </template>
 
+<script setup lang="ts">
+import PublicLayout from '@/Layouts/PublicLayout.vue'
+import { ref, reactive } from 'vue'
+
+// Formulaire
+const form = reactive({
+  name: '',
+  email: '',
+  phone: '',
+  subject: '',
+  message: ''
+})
+
+// États
+const loading = ref(false)
+const successMessage = ref('')
+const errors = reactive({
+  name: '',
+  email: '',
+  message: ''
+})
+
+// Validation
+const validateForm = (): boolean => {
+  let valid = true
+
+  // Reset errors
+  Object.keys(errors).forEach(key => {
+    errors[key as keyof typeof errors] = ''
+  })
+
+  // Validation du nom
+  if (!form.name.trim()) {
+    errors.name = 'Le nom est requis'
+    valid = false
+  } else if (form.name.trim().length < 2) {
+    errors.name = 'Le nom doit contenir au moins 2 caractères'
+    valid = false
+  }
+
+  // Validation de l'email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!form.email) {
+    errors.email = 'L\'email est requis'
+    valid = false
+  } else if (!emailRegex.test(form.email)) {
+    errors.email = 'Format d\'email invalide'
+    valid = false
+  }
+
+  // Validation du message
+  if (!form.message.trim()) {
+    errors.message = 'Le message est requis'
+    valid = false
+  } else if (form.message.trim().length < 10) {
+    errors.message = 'Le message doit contenir au moins 10 caractères'
+    valid = false
+  }
+
+  return valid
+}
+
+// Soumission du formulaire
+const submitForm = async () => {
+  if (!validateForm()) return
+
+  loading.value = true
+
+  try {
+    // Simuler l'envoi
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    // Réinitialiser le formulaire
+    Object.keys(form).forEach(key => {
+      form[key as keyof typeof form] = ''
+    })
+
+    // Afficher le message de succès
+    successMessage.value = 'Votre message a été envoyé avec succès !'
+
+    // Cacher le message après 5 secondes
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 5000)
+
+  } catch (error) {
+    alert('Une erreur est survenue. Veuillez réessayer.')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Animations (comme About.vue)
+let io: IntersectionObserver | null = null
+const vReveal = {
+  mounted(el: HTMLElement) {
+    el.classList.add('reveal')
+    if (!io) {
+      io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-visible')
+            io?.unobserve(e.target)
+          }
+        })
+      }, { threshold: .14 })
+    }
+    io.observe(el)
+  }
+}
+</script>
+
 <style scoped>
-/* ===== Reveal */
-.reveal{ opacity:0; transform: translateY(12px) scale(.985); filter: blur(2px); transition: all .6s cubic-bezier(.2,.8,.2,1) }
-.reveal.is-visible{ opacity:1; transform:none; filter:none }
-
-/* ===== Tokens (cohérents) */
-.card{ position:relative; border-radius:1.1rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); backdrop-filter:blur(10px) }
-.ring-gold{ position:relative }
-.ring-gold::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; z-index:0; pointer-events:none; background:linear-gradient(120deg,rgba(220,193,118,.9),rgba(255,255,255,.18),rgba(220,193,118,.9)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; border:1px solid transparent }
-.tag-ghost{ display:inline-flex; align-items:center; gap:.4rem; padding:.3rem .6rem; border-radius:.55rem; font-weight:800; font-size:.75rem; color:#fdfdfe; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.20); box-shadow: inset 0 1px 0 rgba(255,255,255,.25) }
-.section-title{ position:relative; display:block; width:100%; font-weight:800; letter-spacing:-.01em; font-size:clamp(1.5rem,2vw + 1rem,2rem) }
-.section-title::after{ content:""; display:block; height:2px; width:110px; margin:.7rem 0 0; background:linear-gradient(90deg,#dcc176,rgba(253,253,254,.6)); opacity:.85; border-radius:999px }
-.chip{ display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .7rem; border-radius:.7rem; color:#fdfdfe; font-weight:600; font-size:.9rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14) }
-.badge-ghost{ display:inline-flex; align-items:center; justify-content:center; border-radius:.4rem; padding:.25rem .4rem; font-size:.7rem; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#fdfdfe }
-.btn-ghost{ display:inline-flex; align-items:center; justify-content:center; padding:.75rem 1.05rem; border-radius:1rem; border:1px solid rgba(255,255,255,.15); color:#fdfdfe; transition:border-color .2s, transform .2s }
-.btn-ghost:hover{ border-color: rgba(220,193,118,.6); transform: translateY(-1px) }
-.btn-outline-gold{ position:relative; display:inline-flex; align-items:center; justify-content:center; padding:.8rem 1.15rem; border-radius:1rem; font-weight:800; color:#fdfdfe; border:1px solid transparent; transition: transform .2s }
-.btn-outline-gold::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background:linear-gradient(120deg,rgba(220,193,118,.9),rgba(255,255,255,.18),rgba(220,193,118,.9)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; border:1px solid transparent }
-.btn-outline-gold:hover{ transform: translateY(-2px) }
-
-/* ===== Icons (mask) */
-.i{ width:18px; height:18px; display:inline-block; border-radius:5px; background: rgba(255,255,255,.12) }
-.i-phone{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M6.6 10.8a15.6 15.6 0 006.6 6.6l2.2-2.2a1 1 0 011-.24 11.5 11.5 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A16 16 0 013 5a1 1 0 011-1h3.5a1 1 0 011 1 11.5 11.5 0 00.6 3.6 1 1 0 01-.24 1z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-mail{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M20 8l-8 5-8-5V6l8 5 8-5v2zM4 18h16v-2H4v2z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M20 8l-8 5-8-5V6l8 5 8-5v2zM4 18h16v-2H4v2z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-pin{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>') center/contain no-repeat; background:#dcc176 }
-.i-clock{ -webkit-mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11H7v-2h4V6h2v7z"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11H7v-2h4V6h2v7z"/></svg>') center/contain no-repeat; background:#dcc176 }
-
-/* ===== HERO 3D — “Beacon + Mail” */
-.hero-ribbon{ position:absolute; left:0; right:0; top:-10px; height:36px; opacity:.45; transform: rotate(-2deg); background: repeating-linear-gradient(135deg,#2a3644 0 18px,#2a3644 18px 28px,#dcc176 28px 46px,#dcc176 46px 56px) }
-.hero-halo{ position:absolute; inset:-40px; border-radius:2rem; filter:blur(36px); opacity:.55; background: radial-gradient(60% 60% at 25% 25%, #dcc176 0%, transparent 60%) }
-
-.contact3d{ position:relative; height:min(30rem,64vw); display:grid; place-items:center; perspective:1100px; transform-style:preserve-3d; filter: drop-shadow(0 24px 70px rgba(0,0,0,.45)) }
-.contact3d .grid-floor{
-  position:absolute; inset:auto; bottom:-8px; width:96%; height:12rem; border-radius:1.2rem;
-  transform: rotateX(62deg) rotateZ(-8deg);
-  background:
-    repeating-linear-gradient(0deg, rgba(255,255,255,.09) 0 2px, transparent 2px 12px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 2px, transparent 2px 12px),
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
-  border:1px solid rgba(255,255,255,.12);
+/* Styles identiques à About.vue pour la cohérence */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease-out;
 }
 
-/* Beacon */
-.beacon{ position:relative; transform: translateZ(90px) rotateX(12deg) }
-.beacon .stem{
-  width:10px; height:110px; margin:0 auto; border-radius:8px;
-  background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.05));
-  border:1px solid rgba(255,255,255,.14);
-}
-.beacon .head{
-  width:52px; height:52px; margin:-8px auto 0; border-radius:999px;
-  background: radial-gradient(60% 60% at 50% 45%, rgba(255,255,255,.2), rgba(21,30,39,.6));
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow: 0 20px 60px -20px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.06);
-}
-.beacon .ring{ position:absolute; left:50%; top:34%; transform: translate(-50%,-50%); border-radius:999px; border:1px solid rgba(255,255,255,.16) }
-.beacon .r1{ width:120px; height:120px; animation: ringPulse 4.5s ease-in-out infinite }
-.beacon .r2{ width:180px; height:180px; animation: ringPulse 5s ease-in-out infinite .2s }
-.beacon .r3{ width:240px; height:240px; animation: ringPulse 5.5s ease-in-out infinite .4s }
-.beacon .ping{
-  position:absolute; left:50%; top:34%; width:14px; height:14px; transform: translate(-50%,-50%);
-  background:#dcc176; border-radius:999px; filter: drop-shadow(0 0 10px rgba(220,193,118,.6));
-  animation: ping 1.8s ease-in-out infinite;
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-/* Envelope */
-.mail{ position:absolute; right:6%; top:22%; transform: translateZ(120px) rotateX(10deg) rotateZ(-8deg) }
-.mail .env{
-  width:140px; height:90px; border-radius:10px; background:linear-gradient(160deg, rgba(255,255,255,.16), rgba(21,30,39,.55));
-  border:1px solid rgba(255,255,255,.14); position:relative; z-index:2;
-}
-.mail .flap{
-  position:absolute; width:0; height:0; left:0; top:0; z-index:3;
-  border-left:70px solid transparent; border-right:70px solid transparent; border-top:48px solid rgba(255,255,255,.22);
-  transform-origin: top; animation: flap 4s ease-in-out infinite;
-}
-.mail .shadow{
-  position:absolute; inset:auto; top:100%; left:10px; width:120px; height:12px; filter: blur(8px); opacity:.5;
-  background: radial-gradient(60% 60% at 50% 50%, rgba(0,0,0,.4), transparent 60%);
+/* Style pour les détails/summary */
+details summary::-webkit-details-marker {
+  display: none;
 }
 
-/* Badges tourbillonnants */
-.badge{ position:absolute; width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.18); display:grid; place-items:center }
-.badge.b1{ left:8%; top:22%; transform: translateZ(110px) rotateX(12deg); animation: float 4s ease-in-out infinite }
-.badge.b2{ right:16%; bottom:18%; transform: translateZ(110px) rotateX(12deg); animation: float 4.6s ease-in-out infinite .2s }
-.badge.b3{ left:22%; bottom:12%; transform: translateZ(110px) rotateX(12deg); animation: float 5s ease-in-out infinite .4s }
+details summary {
+  list-style: none;
+}
 
-/* Animations 3D */
-@keyframes ringPulse { 0%,100%{ transform: translate(-50%,-50%) scale(1) } 50%{ transform: translate(-50%,-50%) scale(1.04) } }
-@keyframes ping { 0%,100%{ transform: translate(-50%,-50%) scale(1) } 50%{ transform: translate(-50%,-50%) scale(1.2) } }
-@keyframes flap { 0%,100%{ transform: rotateX(0deg) } 50%{ transform: rotateX(-22deg) } }
-@keyframes float { 0%,100%{ transform: translateZ(110px) translateY(0) rotateX(12deg) } 50%{ transform: translateZ(110px) translateY(-8px) rotateX(12deg) } }
+/* Transition pour les flèches */
+details summary svg {
+  transition: transform 0.3s ease;
+}
 
-/* ===== Map */
-.map-wrap{ position:relative; width:100%; height:420px }
-@media (max-width: 640px){ .map-wrap{ height:300px } }
+details[open] summary svg {
+  transform: rotate(180deg);
+}
 
-/* ===== Footer-like CTA halo (déjà utilisé) */
-.footer-card{ position:relative; border-radius:1.25rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12) }
-.gradient-ring{ position:relative }
-.gradient-ring::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; z-index:0; pointer-events:none; background:linear-gradient(120deg,rgba(220,193,118,.9),rgba(255,255,255,.18),rgba(220,193,118,.9)); -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; border:1px solid transparent }
-.glow{ position:absolute; inset:auto; filter:blur(70px); opacity:.25; pointer-events:none }
-.glow.g1{ left:5%; bottom:-20%; width:40%; height:120%; background: radial-gradient(50% 50% at 30% 40%, #dcc176 0%, transparent 60%) }
-.glow.g2{ right:0; top:-20%; width:30%; height:110%; background: radial-gradient(50% 50% at 70% 30%, #ffffff 0%, transparent 60%) }
-.glow.g3{ left:25%; top:10%; width:20%; height:60%; background: radial-gradient(50% 50% at 50% 50%, #dcc176 0%, transparent 60%) }
+/* Effets pour les inputs */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
 
-/* Utils */
-.text-bk-gold{ color:#dcc176 }
+/* Effets de survol */
+.hover-lift {
+  transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
 </style>
